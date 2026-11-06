@@ -1,4 +1,14 @@
 /* Shared visual language for the five Manager Web applications. */
+/* The embedded pages use the space gained when the Manager Web index closes. */
+html.ui-debtors[data-wide="true"] .main-wrap,
+html.ui-holiday[data-wide="true"] .container,
+html.ui-trip[data-wide="true"] .container { max-width: none; width: 100%; }
+html.ui-debtors[data-wide="true"] .main-wrap,
+html.ui-trip[data-wide="true"] .container { padding-inline: clamp(12px, 1.5vw, 28px); }
+html.ui-stock[data-wide="true"] .workspace { margin-inline: clamp(12px, 1.5vw, 28px); }
+@media (max-width: 760px) {
+  html.ui-stock[data-wide="true"] .workspace { margin-inline: 10px; }
+}
 html.unified-ui {
   --ui-ink: #233d50;
   --ui-muted: #667f90;

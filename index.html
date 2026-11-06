@@ -70,13 +70,18 @@
     const sidebar = document.getElementById('sidebar');
     const mobileMenu = window.matchMedia('(max-width: 760px)');
     const themeToggle = document.getElementById('themeToggle');
+    // Local file pages have opaque origins, so their iframe messages need a wildcard target.
+    const viewerMessageTarget = location.protocol === 'file:' ? '*' : location.origin;
+    const isViewerOrigin = event => location.protocol === 'file:'
+      ? event.origin === 'null' || event.origin === 'file://'
+      : event.origin === location.origin;
     function applyTheme(theme) {
       const dark = theme === 'dark';
       document.documentElement.dataset.theme = dark ? 'dark' : 'light';
       themeToggle.setAttribute('aria-pressed', String(dark));
       document.getElementById('themeToggleLabel').textContent = dark ? 'โหมดมืด' : 'โหมดสว่าง';
       document.querySelector('meta[name="theme-color"]').content = dark ? '#0b1422' : '#e5ffff';
-      if (viewer.contentWindow && viewer.getAttribute('src')) viewer.contentWindow.postMessage({ type: 'manager-web-theme', theme: dark ? 'dark' : 'light' }, location.origin);
+      if (viewer.contentWindow && viewer.getAttribute('src')) viewer.contentWindow.postMessage({ type: 'manager-web-theme', theme: dark ? 'dark' : 'light' }, viewerMessageTarget);
     }
     applyTheme(document.documentElement.dataset.theme);
     themeToggle.addEventListener('click', () => {
@@ -84,11 +89,17 @@
       applyTheme(next);
       try { localStorage.setItem('manager-web-theme', next); } catch (_) {}
     });
+    function syncViewerLayout() {
+      if (viewer.contentWindow && viewer.getAttribute('src')) {
+        viewer.contentWindow.postMessage({ type: 'manager-web-layout', wide: !mobileMenu.matches && app.classList.contains('sidebar-collapsed') }, viewerMessageTarget);
+      }
+    }
     viewer.addEventListener('load', () => {
-      viewer.contentWindow.postMessage({ type: 'manager-web-theme', theme: document.documentElement.dataset.theme }, location.origin);
+      viewer.contentWindow.postMessage({ type: 'manager-web-theme', theme: document.documentElement.dataset.theme }, viewerMessageTarget);
+      syncViewerLayout();
     });
     window.addEventListener('message', event => {
-      if (event.origin !== location.origin || event.source !== viewer.contentWindow || event.data?.type !== 'manager-web-theme') return;
+      if (!isViewerOrigin(event) || event.source !== viewer.contentWindow || event.data?.type !== 'manager-web-theme') return;
       applyTheme(event.data.theme);
       try { localStorage.setItem('manager-web-theme', document.documentElement.dataset.theme); } catch (_) {}
     });
@@ -98,6 +109,7 @@
       menuToggle.setAttribute('aria-expanded', String(expanded));
       menuToggle.setAttribute('aria-label', expanded ? 'ปิดเมนู' : 'เปิดเมนู');
       sidebar.inert = !expanded;
+      syncViewerLayout();
     }
     function closeMenu() {
       app.classList.remove('menu-open');

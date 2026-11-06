@@ -40,7 +40,11 @@ button:focus-visible, a:focus-visible {
   overflow: hidden;
   transition: gap .28s ease;
 }
-.app.sidebar-collapsed { gap: 0; }
+.app.sidebar-collapsed { gap: 0; padding: 8px; }
+.app.sidebar-collapsed .main { gap: 8px; }
+.app.sidebar-collapsed :is(.topbar, .content) { border-radius: 18px; }
+.app.sidebar-collapsed .home { padding: clamp(12px, 2vw, 30px); }
+.app.sidebar-collapsed .home-inner { max-width: none; }
 .sidebar, .topbar, .content {
   border: 1px solid #ffffffd6;
   background: #ffffffa8;
@@ -257,6 +261,7 @@ h1 { overflow: hidden; margin: 3px 0 0; color: #24384b; font-size: clamp(17px, 1
 }
 @media (max-width: 760px) {
   .app { display: block; padding: 11px; }
+  .app.sidebar-collapsed { padding: 11px; }
   .sidebar {
     position: fixed;
     top: 11px;
