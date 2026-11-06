@@ -284,6 +284,10 @@ html.unified-ui .swal2-cancel { border-radius: 12px !important; }
   html.ui-trip :is(header, .glass-panel, .kpi-card),
   html.ui-stock[data-theme="light"] :is(.sidebar, .topbar, .metric-card, .workspace, .transaction-card) { border-radius: 22px; }
   html.ui-trip .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+  html.ui-trip .charts-grid { grid-template-columns: minmax(0, 1fr); }
+  html.ui-trip .chart-container,
+  html.ui-trip .chart-canvas-wrapper { min-width: 0; }
+  html.ui-trip .chart-canvas-wrapper canvas { max-width: 100%; }
   html.ui-trip .kpi-container { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
   html.ui-stock[data-theme="light"] .metric-grid { gap: 12px; }
 }

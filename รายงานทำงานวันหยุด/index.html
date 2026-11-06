@@ -142,6 +142,12 @@
       gap: 1rem;
     }
 
+    .history-actions {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
     /* Badges */
     .status-badge {
       display: inline-flex;
@@ -866,10 +872,14 @@
               ประวัติการบันทึกรายงานทำงานวันหยุด
             </h2>
             
-            <div class="header-actions">
+            <div class="header-actions history-actions">
               <button class="btn-action" id="refreshBtn" title="รีเฟรชข้อมูล">
                 <i data-lucide="rotate-cw" style="width:16px; height:16px;"></i>
                 รีเฟรช
+              </button>
+              <button class="btn-action primary-action" id="exportCsvBtn">
+                <i data-lucide="download" style="width:16px; height:16px;"></i>
+                ส่งออกไฟล์ CSV
               </button>
             </div>
           </div>
@@ -917,12 +927,6 @@
             </div>
           </div>
 
-          <div class="grid-actions">
-            <button class="btn-action primary-action" id="exportCsvBtn">
-              <i data-lucide="download" style="width:16px; height:16px;"></i>
-              ส่งออกไฟล์ CSV
-            </button>
-          </div>
         </section>
 
       </div>
@@ -934,7 +938,6 @@
 
   <!-- Setup connected database -->
 
-  <script src="../list-pagination.js?v=1"></script>
   <script>
     // Configuration & Data State
     let state = {
@@ -1087,7 +1090,6 @@
     }
 
     // Render Table, Stats, Chart, and Activity Feed
-    const listPager = createListPager(document.querySelector('.table-container'), renderDashboard);
     function renderDashboard() {
       // Get Search/Filter Values
       const searchQuery = document.getElementById('filterSearch').value.toLowerCase().trim();
@@ -1112,8 +1114,6 @@
 
         return matchesText && matchesDate;
       });
-      const pageRecords = listPager.page(filteredRecords);
-
       // 1. Render Table Rows
       const tbody = document.getElementById('recordsBody');
       const emptyState = document.getElementById('tableEmptyState');
@@ -1123,7 +1123,7 @@
         emptyState.style.display = 'flex';
       } else {
         emptyState.style.display = 'none';
-        tbody.innerHTML = pageRecords.map(rec => {
+        tbody.innerHTML = filteredRecords.map(rec => {
           // Format date for Thai layout: dd/mm/yyyy (handles ISO date strings and GMT timestamps)
           let displayDate = rec.date || '';
           if (displayDate) {
@@ -1252,7 +1252,7 @@
       form.addEventListener('submit', handleFormSubmit);
 
       // 2. Search & Filters events
-      const filterAndRender = () => { listPager.reset(); renderDashboard(); };
+      const filterAndRender = () => renderDashboard();
       document.getElementById('filterSearch').addEventListener('input', filterAndRender);
       document.getElementById('filterStartDate').addEventListener('change', filterAndRender);
       document.getElementById('filterEndDate').addEventListener('change', filterAndRender);
@@ -1261,7 +1261,6 @@
         document.getElementById('filterSearch').value = '';
         document.getElementById('filterStartDate').value = '';
         document.getElementById('filterEndDate').value = '';
-        listPager.reset();
         renderDashboard();
         
         Swal.fire({
