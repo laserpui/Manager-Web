@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบหลังบ้านจัดการเวร | Laser Engineer</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="ระบบจัดการลำดับคิวและบันทึกเวรเดินทางต่างจังหวัดสำหรับผู้ดูแลระบบ">
+  <meta name="author" content="Laser Engineer">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Design Tokens & Theme Setup */
+    :root {
+      --font-family: 'Outfit', 'Noto Sans Thai', sans-serif;
+      --glass-bg: rgba(17, 24, 39, 0.45);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-highlight: rgba(255, 255, 255, 0.05);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.4);
+      --accent-red: #ef4444;
+      --accent-yellow: #eab308;
+      --accent-green: #10b981;
+      --card-radius: 24px;
+      --transition-speed: 0.3s;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: #0b0f19;
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      padding-bottom: 50px;
+    }
+
+    /* Animated Color Background */
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      background: radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 1) 0%, rgba(9, 11, 20, 1) 90%);
+      overflow: hidden;
+    }
+
+    .blob {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.35;
+      mix-blend-mode: screen;
+      animation: floatBlob 25s infinite alternate ease-in-out;
+      z-index: -1;
+    }
+
+    .blob-red {
+      background: radial-gradient(circle, rgba(239, 68, 68, 0.8) 0%, rgba(239, 68, 68, 0) 70%);
+      top: -10%;
+      left: -10%;
+      animation-delay: 0s;
+    }
+
+    .blob-blue {
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.8) 0%, rgba(59, 130, 246, 0) 70%);
+      bottom: -10%;
+      right: -10%;
+      animation-delay: 6s;
+    }
+
+    .blob-yellow {
+      background: radial-gradient(circle, rgba(234, 179, 8, 0.7) 0%, rgba(234, 179, 8, 0) 70%);
+      top: 40%;
+      left: 30%;
+      animation-delay: 12s;
+    }
+
+    @keyframes floatBlob {
+      0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+      33% { transform: translate(100px, -80px) scale(1.15) rotate(120deg); }
+      66% { transform: translate(-80px, 120px) scale(0.9) rotate(240deg); }
+      100% { transform: translate(0, 0) scale(1) rotate(360deg); }
+    }
+
+    /* Layout Container */
+    .container {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Glassmorphism Styles */
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--card-radius);
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3);
+      padding: 30px;
+      margin-bottom: 24px;
+      transition: transform var(--transition-speed), box-shadow var(--transition-speed), border var(--transition-speed);
+    }
+
+    .glass-panel:hover {
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 16px 50px 0 rgba(0, 0, 0, 0.4);
+    }
+
+    /* Typography Utilities */
+    h1, h2, h3, h4 {
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* Header Component */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      background: linear-gradient(135deg, #ef4444, #3b82f6);
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+    }
+
+    .logo-icon i {
+      color: white;
+      font-size: 24px;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: default;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.active {
+      background: var(--accent-green);
+      box-shadow: 0 0 12px var(--accent-green);
+    }
+
+    .status-dot.warning {
+      background: var(--accent-yellow);
+      box-shadow: 0 0 12px var(--accent-yellow);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 16px;
+      font-family: var(--font-family);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      border: 1px solid transparent;
+      outline: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ef4444 0%, #3b82f6 100%);
+      color: white;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 25px rgba(59, 130, 246, 0.4);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-icon-only {
+      padding: 8px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .btn-icon-only:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1.8fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Form Fields Styling */
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 14px 16px 14px 44px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      color: var(--text-main);
+      font-family: var(--font-family);
+      font-size: 15px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .form-select option {
+      background: #111827; /* Dark background for dropdown menu options */
+      color: #ffffff;      /* White text for visibility */
+    }
+
+    .form-textarea {
+      padding-left: 16px;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 40px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* Option/Region Chips */
+    .regions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .chip-option {
+      position: relative;
+    }
+
+    .chip-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .chip-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .chip-label:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .chip-option input[type="radio"]:checked + .chip-label {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(59, 130, 246, 0.15));
+      border-color: var(--primary);
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+    }
+
+    .other-input-container {
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* Switch Component */
+    .switch-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 15px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.15);
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background: linear-gradient(135deg, #ef4444, #3b82f6);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
+    .switch-label-text {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .switch-subtext {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Employee Queue List */
+    .queue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .queue-list::-webkit-scrollbar, .table-container::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .queue-list::-webkit-scrollbar-track, .table-container::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 10px;
+    }
+    .queue-list::-webkit-scrollbar-thumb, .table-container::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .queue-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 18px;
+      transition: all 0.2s;
+    }
+
+    .queue-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .queue-item.next-up {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(59, 130, 246, 0.18) 100%);
+      border: 2px solid rgba(59, 130, 246, 0.45);
+      box-shadow: 0 0 25px rgba(59, 130, 246, 0.25), 0 4px 15px rgba(239, 68, 68, 0.1);
+      position: relative;
+      overflow: hidden;
+      padding: 18px 20px 18px 24px;
+      margin-bottom: 6px;
+    }
+
+    .queue-item.next-up::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background: linear-gradient(to bottom, #ef4444, #3b82f6);
+    }
+
+    .queue-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .queue-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .next-up .queue-badge {
+      background: linear-gradient(135deg, #ef4444, #3b82f6);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      width: 44px;
+      height: 44px;
+      font-size: 18px;
+      animation: pulseGlow 2.5s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+      50% { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.7), 0 0 30px rgba(239, 68, 68, 0.3); }
+      100% { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+    }
+
+    .next-up .queue-name {
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fca5a5, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .queue-name {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .queue-tag {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 50px;
+      font-weight: 700;
+      margin-left: 8px;
+      display: inline-block;
+    }
+
+    .queue-tag.tag-next {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(59, 130, 246, 0.25));
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      font-size: 12px;
+      padding: 4px 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .queue-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Logs Table styling */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 14px 16px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .region-tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .region-north { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3); }
+    .region-south { background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border-color: rgba(16, 185, 129, 0.3); }
+    .region-east { background: rgba(245, 158, 11, 0.15); color: #fde047; border-color: rgba(245, 158, 11, 0.3); }
+    .region-west { background: rgba(139, 92, 246, 0.15); color: #ddd6fe; border-color: rgba(139, 92, 246, 0.3); }
+    .region-northeast { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(239, 68, 68, 0.3); }
+    .region-other { background: rgba(255, 255, 255, 0.1); color: var(--text-main); border-color: rgba(255, 255, 255, 0.2); }
+
+    .no-data {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Modal Overlay (Auth / Login Overlay) */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 600px;
+      margin: 16px;
+    }
+
+    /* SweetAlert2 Dark style override */
+    .swal2-popup {
+      background: rgba(17, 24, 39, 0.95) !important;
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 24px !important;
+      color: var(--text-main) !important;
+    }
+
+    .swal2-title, .swal2-html-container {
+      color: var(--text-main) !important;
+      font-family: var(--font-family) !important;
+    }
+
+    .swal2-confirm {
+      background: linear-gradient(135deg, #ef4444 0%, #3b82f6 100%) !important;
+      border-radius: 12px !important;
+      font-family: var(--font-family) !important;
+      font-weight: 600 !important;
+    }
+
+    .swal2-cancel {
+      background: rgba(255, 255, 255, 0.1) !important;
+      border-radius: 12px !important;
+      font-family: var(--font-family) !important;
+      color: var(--text-main) !important;
+    }
+
+    .pulse-animation {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Authentication Overlay Screen -->
+  <div id="auth-overlay" class="modal-overlay" style="background: rgba(9, 11, 20, 0.95); z-index: 9999; display: flex;">
+    <div class="glass-panel" style="width: 100%; max-width: 420px; padding: 40px; text-align: center; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1);">
+      <div class="logo-icon" style="margin: 0 auto 20px auto; background: linear-gradient(135deg, #ef4444, #3b82f6); width: 60px; height: 60px; border-radius: 18px;">
+        <i data-lucide="lock" style="color: white; font-size: 28px;"></i>
+      </div>
+      <h2 style="font-size: 22px; margin-bottom: 8px;">ระบบจัดการหลังบ้าน (Admin)</h2>
+      <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 24px;">กรุณาใส่รหัสผ่านผู้ดูแลระบบเพื่อเข้าใช้งาน</p>
+      
+      <form onsubmit="handleAuthSubmit(event)">
+        <div class="form-group" style="margin-bottom: 24px;">
+          <input type="password" id="adminAuthPass" name="adminAuthPass" class="form-input" style="padding-left: 16px; text-align: center; font-size: 20px; letter-spacing: 5px; height: 50px;" placeholder="••••" autocomplete="current-password" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px 24px; font-size: 16px; border-radius: 16px; height: 50px;">
+          <i data-lucide="key-round"></i> ยืนยันรหัสผ่าน
+        </button>
+      </form>
+      
+      <a href="index.html" class="btn btn-secondary" style="width: 100%; margin-top: 12px; padding: 12px 24px; border-radius: 16px; height: 50px;">
+        <i data-lucide="arrow-left"></i> กลับหน้าแรกพนักงาน
+      </a>
+    </div>
+  </div>
+
+  <!-- Background animations -->
+  <div class="bg-animation">
+    <div class="blob blob-red"></div>
+    <div class="blob blob-blue"></div>
+    <div class="blob blob-yellow"></div>
+  </div>
+
+  <div class="container">
+    
+    <!-- Top Header -->
+    <header>
+      <div class="logo-area">
+        <div class="logo-icon">
+          <i data-lucide="settings-2"></i>
+        </div>
+        <div>
+          <h1 style="font-size: 24px; line-height: 1.2;">หลังบ้านจัดการคิวเวร</h1>
+          <p style="font-size: 13px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Admin Control Panel</p>
+        </div>
+      </div>
+      
+      <div class="header-controls">
+        <div class="status-badge" id="api-status-badge" style="margin-right: 10px;">
+          <span class="status-dot active" id="api-status-dot"></span>
+          <span id="api-status-text">เชื่อมต่อ Google Sheets</span>
+        </div>
+        <a href="index.html" class="btn btn-secondary" style="padding: 10px 18px; font-size: 14px; border-radius: 12px;">
+          <i data-lucide="layout-dashboard"></i> หน้าพนักงาน
+        </a>
+        <button onclick="handleLogout()" class="btn btn-danger" style="padding: 10px 18px; font-size: 14px; border-radius: 12px;">
+          <i data-lucide="log-out"></i> ออกจากระบบ
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <div class="dashboard-grid">
+      
+      <!-- Left Column: Queue Status & Controls -->
+      <div class="sidebar-wrapper">
+        <div class="glass-panel">
+          <div class="queue-header">
+            <h2 style="font-size: 18px; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="users" style="color: #3b82f6;"></i> ลำดับคิวพนักงาน
+            </h2>
+            <button class="btn-icon-only" onclick="resetQueueToDefault()" title="รีเซ็ตคิวพนักงานใหม่ทั้งหมด">
+              <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i>
+            </button>
+          </div>
+          
+          <div class="queue-list" id="queue-list-container">
+            <div class="no-data">กำลังโหลดข้อมูลคิว...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Trip Form & Logs -->
+      <div class="content-wrapper">
+        
+        <!-- Trip Duty Logging Form -->
+        <div class="glass-panel">
+          <h2 style="font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="clipboard-signature" style="color: #ef4444;"></i> บันทึกเวรเดินทาง
+          </h2>
+          
+          <form id="trip-form" onsubmit="handleFormSubmit(event)">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <div class="form-group">
+                <label class="form-label" for="startDate">
+                  <i data-lucide="calendar"></i> วัน เดิน ปี (วันเดินทางไป)*
+                </label>
+                <input type="date" id="startDate" class="form-input" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="endDate">
+                  <i data-lucide="calendar-check"></i> วัน เดิน ปี (วันเดินทางกลับ)*
+                </label>
+                <input type="date" id="endDate" class="form-input" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="employeeSelect">
+                <i data-lucide="user-check"></i> รายชื่อพนักงาน*
+              </label>
+              <select id="employeeSelect" class="form-select" required>
+                <!-- Dynamic Options -->
+              </select>
+              <span class="input-icon"><i data-lucide="users" style="width: 18px; height: 18px;"></i></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i data-lucide="map-pin"></i> รายละเอียดงาน (ภูมิภาค)*
+              </label>
+              
+              <div class="regions-grid">
+                <div class="chip-option">
+                  <input type="radio" id="region-north" name="region" value="ภาคเหนือ" required onclick="toggleOtherInput(false)">
+                  <label for="region-north" class="chip-label">
+                    <i data-lucide="compass" style="width: 16px; height: 16px;"></i> เหนือ
+                  </label>
+                </div>
+                <div class="chip-option">
+                  <input type="radio" id="region-south" name="region" value="ภาคใต้" required onclick="toggleOtherInput(false)">
+                  <label for="region-south" class="chip-label">
+                    <i data-lucide="compass" style="width: 16px; height: 16px;"></i> ใต้
+                  </label>
+                </div>
+                <div class="chip-option">
+                  <input type="radio" id="region-east" name="region" value="ภาคตะวันออก" required onclick="toggleOtherInput(false)">
+                  <label for="region-east" class="chip-label">
+                    <i data-lucide="compass" style="width: 16px; height: 16px;"></i> ตะวันออก
+                  </label>
+                </div>
+                <div class="chip-option">
+                  <input type="radio" id="region-west" name="region" value="ภาคตะวันตก" required onclick="toggleOtherInput(false)">
+                  <label for="region-west" class="chip-label">
+                    <i data-lucide="compass" style="width: 16px; height: 16px;"></i> ตะวันตก
+                  </label>
+                </div>
+                <div class="chip-option">
+                  <input type="radio" id="region-northeast" name="region" value="ภาคอีสาน" required onclick="toggleOtherInput(false)">
+                  <label for="region-northeast" class="chip-label">
+                    <i data-lucide="compass" style="width: 16px; height: 16px;"></i> อีสาน
+                  </label>
+                </div>
+                <div class="chip-option">
+                  <input type="radio" id="region-other" name="region" value="อื่นๆ" required onclick="toggleOtherInput(true)">
+                  <label for="region-other" class="chip-label">
+                    <i data-lucide="more-horizontal" style="width: 16px; height: 16px;"></i> อื่นๆ
+                  </label>
+                </div>
+              </div>
+              
+              <div class="other-input-container" id="other-region-container">
+                <input type="text" id="otherRegionDetails" class="form-input" style="padding-left: 16px;" placeholder="กรุณาระบุรายละเอียดงาน/ภาคอื่นๆ">
+              </div>
+            </div>
+
+            <!-- Auto Rotate Queue - Always On Info Badge -->
+            <div style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; margin-top: 4px;">
+              <div style="width: 36px; height: 36px; background: rgba(16, 185, 129, 0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i data-lucide="arrow-down-to-line" style="width: 18px; height: 18px; color: #10b981;"></i>
+              </div>
+              <div>
+                <div style="font-size: 14px; font-weight: 600; color: #10b981;">ย้ายไปท้ายคิวอัตโนมัติ</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">เมื่อบันทึกข้อมูล พนักงานที่เลือกจะถูกย้ายไปไว้ที่ท้ายคิวสุดโดยอัตโนมัติ</div>
+              </div>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+              <i data-lucide="save"></i> บันทึกข้อมูลและอัปเดตคิว
+            </button>
+          </form>
+        </div>
+
+        <!-- History logs -->
+        <div class="glass-panel">
+          <h2 style="font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="history" style="color: #3b82f6;"></i> ประวัติการเดินทางล่าสุด (ฝั่งผู้ใช้)
+          </h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>วันที่ไป - วันที่กลับ</th>
+                  <th>ระยะเวลา</th>
+                  <th>พนักงาน</th>
+                  <th>ภูมิภาค / รายละเอียดงาน</th>
+                </tr>
+              </thead>
+              <tbody id="trips-table-body">
+                <tr>
+                  <td colspan="4" class="no-data">กำลังโหลดข้อมูลประวัติ...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Default Employee List
+    const DEFAULT_EMPLOYEES = [
+      "กษิเดช",
+      "กันต์ศักดิ์",
+      "ชาติชาย",
+      "ณัฐพงษ์",
+      "ธนบูรณ์",
+      "ประวิทย์",
+      "พงษ์ศักดิ์",
+      "สมชาย",
+      "อภิลักษณ์",
+      "เอกเลิศ"
+    ];
+
+    // Core States
+    let appConfig = {
+      sheetsUrl: 'https://script.google.com/macros/s/AKfycbxsfBvUoPg-EzTdajj-JW4UvAxOiqYT_ne0jIwHw6EcJ3Ngtr5PRA-t3TMxNFDEN98UrA/exec'
+    };
+    
+    let state = {
+      queue: [],
+      trips: []
+    };
+
+    // Access Authentication Logic
+    function checkAuth() {
+      if (sessionStorage.getItem('isAdminAuthenticated') === 'true') {
+        const overlay = document.getElementById('auth-overlay');
+        if (overlay) {
+          overlay.style.display = 'none';
+        }
+      }
+    }
+
+    function handleAuthSubmit(event) {
+      event.preventDefault();
+      const pw = document.getElementById('adminAuthPass').value;
+      if (pw === 'Admin1234') {
+        sessionStorage.setItem('isAdminAuthenticated', 'true');
+        const overlay = document.getElementById('auth-overlay');
+        if (overlay) {
+          overlay.style.transition = 'opacity 0.4s ease';
+          overlay.style.opacity = '0';
+          setTimeout(() => {
+            overlay.style.display = 'none';
+          }, 400);
+        }
+        Swal.fire({
+          icon: 'success',
+          title: 'เข้าสู่ระบบหลังบ้านสำเร็จ',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'รหัสผ่านแอดมินไม่ถูกต้อง!',
+          text: 'กรุณาลองใหม่อีกครั้ง'
+        });
+        document.getElementById('adminAuthPass').value = '';
+        document.getElementById('adminAuthPass').focus();
+      }
+    }
+
+    function handleLogout() {
+      sessionStorage.removeItem('isAdminAuthenticated');
+      window.location.href = 'index.html';
+    }
+
+    // Load Application Data
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. Perform auth check
+      checkAuth();
+
+      // 2. Set default dates using local timezone components
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      
+      const tomorrowObj = new Date();
+      tomorrowObj.setDate(tomorrowObj.getDate() + 1);
+      const tomorrow = `${tomorrowObj.getFullYear()}-${String(tomorrowObj.getMonth() + 1).padStart(2, '0')}-${String(tomorrowObj.getDate()).padStart(2, '0')}`;
+      
+      document.getElementById('startDate').value = today;
+      document.getElementById('endDate').value = tomorrow;
+
+      // 3. Load data
+      loadData();
+    });
+
+    // Toggle custom text input when "อื่นๆ" is selected
+    function toggleOtherInput(show) {
+      const otherContainer = document.getElementById('other-region-container');
+      const otherInput = document.getElementById('otherRegionDetails');
+      if (show) {
+        otherContainer.style.display = 'block';
+        otherInput.required = true;
+        otherInput.focus();
+      } else {
+        otherContainer.style.display = 'none';
+        otherInput.required = false;
+        otherInput.value = '';
+      }
+    }
+
+    // API & Data Handler Operations
+    async function loadData() {
+      showLoading(true);
+      
+      if (appConfig.sheetsUrl) {
+        try {
+          const response = await fetch(appConfig.sheetsUrl);
+          const result = await response.json();
+          
+          if (result.success) {
+            state.queue = result.queue;
+            state.trips = result.trips;
+            
+            // Format dates
+            state.trips = state.trips.map(trip => {
+              return {
+                ...trip,
+                startDate: formatDateString(trip.startDate),
+                endDate: formatDateString(trip.endDate)
+              };
+            });
+
+            // If empty queue on server, initialize
+            if (state.queue.length === 0) {
+              await initializeSheetQueue(DEFAULT_EMPLOYEES);
+            }
+          } else {
+            throw new Error(result.error || "เกิดข้อผิดพลาดจากเซิร์ฟเวอร์");
+          }
+        } catch (error) {
+          console.error("Sheets API Error, switching to mock: ", error);
+          Swal.fire({
+            icon: 'warning',
+            title: 'ไม่สามารถเชื่อมต่อ Sheets ได้',
+            text: 'ระบบใช้งานโหมดจำลองชั่วคราวเนื่องจาก: ' + error.message,
+            confirmButtonText: 'ตกลง'
+          });
+          loadMockData();
+        }
+      } else {
+        loadMockData();
+      }
+      
+      renderQueue();
+      renderEmployeeSelect();
+      renderTripsTable();
+      showLoading(false);
+    }
+
+    function loadMockData() {
+      const mockQueue = localStorage.getItem('mockQueue');
+      const mockTrips = localStorage.getItem('mockTrips');
+
+      if (mockQueue) {
+        state.queue = JSON.parse(mockQueue);
+      } else {
+        state.queue = [...DEFAULT_EMPLOYEES];
+        localStorage.setItem('mockQueue', JSON.stringify(state.queue));
+      }
+
+      if (mockTrips) {
+        state.trips = JSON.parse(mockTrips);
+      } else {
+        state.trips = [];
+        localStorage.setItem('mockTrips', JSON.stringify(state.trips));
+      }
+    }
+
+    // Helper to parse dates locally to avoid timezone shifts
+    function parseLocalDate(dateVal) {
+      if (!dateVal) return null;
+      if (dateVal instanceof Date) return dateVal;
+      
+      // If it contains T, it's an ISO timestamp
+      if (typeof dateVal === 'string' && dateVal.includes('T')) {
+        return new Date(dateVal);
+      }
+      
+      // If it's a YYYY-MM-DD string
+      const dateParts = dateVal.toString().substring(0, 10).split('-');
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1;
+        const day = parseInt(dateParts[2], 10);
+        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+          return new Date(year, month, day);
+        }
+      }
+      
+      const d = new Date(dateVal);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function formatDateString(dateVal) {
+      if (!dateVal) return '';
+      const date = parseLocalDate(dateVal);
+      if (date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      return dateVal.toString().substring(0, 10);
+    }
+
+    function showLoading(isLoading) {
+      const queueContainer = document.getElementById('queue-list-container');
+      if (isLoading && state.queue.length === 0) {
+        queueContainer.innerHTML = `<div class="no-data"><i class="pulse-animation" data-lucide="loader" style="width: 24px; height: 24px; margin-bottom: 10px;"></i><br>กำลังโหลดคิวพนักงาน...</div>`;
+        lucide.createIcons();
+      }
+    }
+
+    // Render Employee Select Options
+    function renderEmployeeSelect() {
+      const select = document.getElementById('employeeSelect');
+      select.innerHTML = '';
+      
+      if (state.queue.length === 0) return;
+      
+      const sortedQueue = [...state.queue].sort((a, b) => a.localeCompare(b, 'th'));
+      
+      sortedQueue.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        
+        if (name === state.queue[0]) {
+          option.text = `👑 ${name} (คิวถัดไป)`;
+          option.selected = true;
+        } else {
+          option.text = name;
+        }
+        
+        select.appendChild(option);
+      });
+    }
+
+    // Render Queue in Sidebar
+    function renderQueue() {
+      const container = document.getElementById('queue-list-container');
+      container.innerHTML = '';
+
+      if (state.queue.length === 0) {
+        container.innerHTML = `<div class="no-data">ไม่พบรายชื่อพนักงาน</div>`;
+        return;
+      }
+
+      state.queue.forEach((name, index) => {
+        const isNext = index === 0;
+        
+        const item = document.createElement('div');
+        item.className = `queue-item ${isNext ? 'next-up' : ''}`;
+        
+        item.innerHTML = `
+          <div class="queue-info">
+            <div class="queue-badge">${index + 1}</div>
+            <div>
+              <span class="queue-name">${name}</span>
+              ${isNext ? '<span class="queue-tag tag-next">คิวปฏิบัติงาน</span>' : ''}
+            </div>
+          </div>
+          <div class="queue-actions">
+            <button class="btn-icon-only" onclick="moveQueueItem(${index}, -1)" ${isNext ? 'disabled style="opacity: 0.3;"' : ''} title="เลื่อนคิวขึ้น">
+              <i data-lucide="chevron-up" style="width: 14px; height: 14px;"></i>
+            </button>
+            <button class="btn-icon-only" onclick="moveQueueItem(${index}, 1)" ${index === state.queue.length - 1 ? 'disabled style="opacity: 0.3;"' : ''} title="เลื่อนคิวลง">
+              <i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i>
+            </button>
+            <button class="btn-icon-only" onclick="skipQueueItem(${index})" title="ส่งไปท้ายแถว (ข้าม)">
+              <i data-lucide="skip-forward" style="width: 14px; height: 14px; color: var(--accent-yellow);"></i>
+            </button>
+          </div>
+        `;
+        
+        container.appendChild(item);
+      });
+      
+      lucide.createIcons();
+    }
+
+    // Shift item position inside Queue
+    async function moveQueueItem(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= state.queue.length) return;
+      
+      const updatedQueue = [...state.queue];
+      const temp = updatedQueue[index];
+      updatedQueue[index] = updatedQueue[newIndex];
+      updatedQueue[newIndex] = temp;
+      
+      await updateQueueState(updatedQueue);
+    }
+
+    // Skip candidate: Move to the bottom of the list
+    async function skipQueueItem(index) {
+      const updatedQueue = [...state.queue];
+      const [skippedPerson] = updatedQueue.splice(index, 1);
+      updatedQueue.push(skippedPerson);
+      
+      await updateQueueState(updatedQueue);
+      
+      Swal.fire({
+        icon: 'info',
+        title: 'เลื่อนคิวข้าม',
+        text: `ย้าย "${skippedPerson}" ไปไว้ท้ายแถวเรียบร้อยแล้ว`,
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+
+    // Helper: Push Queue state updates to LocalStorage or API
+    async function updateQueueState(newQueue) {
+      state.queue = newQueue;
+      renderQueue();
+      renderEmployeeSelect();
+
+      if (appConfig.sheetsUrl) {
+        try {
+          const response = await fetch(appConfig.sheetsUrl, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'text/plain'
+            },
+            body: JSON.stringify({
+              action: 'updateQueue',
+              queue: newQueue
+            })
+          });
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error);
+        } catch (error) {
+          console.error("Failed to update queue online:", error);
+          Swal.fire({
+            icon: 'error',
+            title: 'ข้อผิดพลาดเครือข่าย',
+            text: 'ไม่สามารถอัปเดตลำดับคิวใน Google Sheets ได้: ' + error.message
+          });
+        }
+      } else {
+        localStorage.setItem('mockQueue', JSON.stringify(newQueue));
+      }
+    }
+
+    // Reset Queue to original configuration
+    async function resetQueueToDefault() {
+      const result = await Swal.fire({
+        title: 'ยืนยันการรีเซ็ตคิว?',
+        text: "ลำดับคิวในปัจจุบันจะถูกลบและเรียงลำดับใหม่ตามเกณฑ์เริ่มต้นของระบบ (10 คน)!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยันรีเซ็ต',
+        cancelButtonText: 'ยกเลิก'
+      });
+
+      if (result.isConfirmed) {
+        showLoading(true);
+        if (appConfig.sheetsUrl) {
+          try {
+            const response = await fetch(appConfig.sheetsUrl, {
+              method: 'POST',
+              mode: 'cors',
+              headers: {
+                'Content-Type': 'text/plain'
+              },
+              body: JSON.stringify({
+                action: 'initializeQueue',
+                employees: DEFAULT_EMPLOYEES
+              })
+            });
+            const res = await response.json();
+            if (res.success) {
+              state.queue = res.queue;
+            } else {
+              throw new Error(res.error);
+            }
+          } catch (e) {
+            Swal.fire({
+              icon: 'error',
+              title: 'รีเซ็ตไม่สำเร็จ',
+              text: 'พบปัญหาขณะล้างข้อมูลในชีท: ' + e.message
+            });
+          }
+        } else {
+          state.queue = [...DEFAULT_EMPLOYEES];
+          localStorage.setItem('mockQueue', JSON.stringify(state.queue));
+        }
+
+        renderQueue();
+        renderEmployeeSelect();
+        Swal.fire({
+          icon: 'success',
+          title: 'รีเซ็ตคิวเรียบร้อย',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        showLoading(false);
+      }
+    }
+
+    // Submit Trip details
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+
+      const submitBtn = document.getElementById('submit-btn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="pulse-animation" data-lucide="loader"></i> กำลังบันทึก...';
+        lucide.createIcons();
+      }
+
+      try {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const employeeName = document.getElementById('employeeSelect').value;
+        
+        const regionRadio = document.querySelector('input[name="region"]:checked');
+        let details = regionRadio.value;
+        if (details === 'อื่นๆ') {
+          const otherText = document.getElementById('otherRegionDetails').value.trim();
+          if (!otherText) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'กรอกข้อมูลไม่ครบถ้วน',
+              text: 'กรุณากรอกรายละเอียดงาน ในช่องระบุรายละเอียดอื่นๆ'
+            });
+            return;
+          }
+          details = otherText;
+        }
+
+        const rotateQueue = true; // ย้ายไปท้ายคิวอัตโนมัติเสมอเมื่อบันทึกข้อมูล
+
+        if (new Date(startDate) > new Date(endDate)) {
+          Swal.fire({
+            icon: 'error',
+            title: 'วันที่ไม่สมเหตุสมผล',
+            text: 'วันเดินทางกลับต้องไม่ก่อนวันเดินทางไป!'
+          });
+          return;
+        }
+
+        Swal.fire({
+          title: 'กำลังบันทึกเวร...',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        const newTrip = {
+          timestamp: new Date().toISOString(),
+          startDate,
+          endDate,
+          employeeName,
+          details
+        };
+
+        if (appConfig.sheetsUrl) {
+          try {
+            const response = await fetch(appConfig.sheetsUrl, {
+              method: 'POST',
+              mode: 'cors',
+              headers: {
+                'Content-Type': 'text/plain'
+              },
+              body: JSON.stringify({
+                action: 'addTrip',
+                startDate,
+                endDate,
+                employeeName,
+                details,
+                rotateQueue
+              })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+              await loadData();
+              Swal.fire({
+                icon: 'success',
+                title: 'บันทึกทริปสำเร็จ',
+                text: 'ข้อมูลลง Google Sheet และสลับเวรพนักงานเรียบร้อย',
+                timer: 2000,
+                showConfirmButton: false
+              });
+              document.getElementById('trip-form').reset();
+              toggleOtherInput(false);
+            } else {
+              throw new Error(result.error);
+            }
+          } catch (error) {
+            console.error("API Error adding trip: ", error);
+            Swal.fire({
+              icon: 'error',
+              title: 'การบันทึกขัดข้อง',
+              text: 'ไม่สามารถบันทึกลง Google Sheet ได้: ' + error.message
+            });
+          }
+        } else {
+          const mockTrips = JSON.parse(localStorage.getItem('mockTrips') || '[]');
+          mockTrips.unshift(newTrip);
+          localStorage.setItem('mockTrips', JSON.stringify(mockTrips));
+          state.trips = mockTrips;
+
+          if (rotateQueue && state.queue.includes(employeeName)) {
+            const updatedQueue = state.queue.filter(name => name !== employeeName);
+            updatedQueue.push(employeeName);
+            state.queue = updatedQueue;
+            localStorage.setItem('mockQueue', JSON.stringify(state.queue));
+          }
+
+          renderQueue();
+          renderEmployeeSelect();
+          renderTripsTable();
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'บันทึกทริป (Mock) สำเร็จ',
+            timer: 2000,
+            showConfirmButton: false
+          });
+
+          document.getElementById('trip-form').reset();
+          toggleOtherInput(false);
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i data-lucide="save"></i> บันทึกข้อมูลและอัปเดตคิว';
+          lucide.createIcons();
+        }
+      }
+    }
+
+    // Render Table Logs
+    function renderTripsTable() {
+      const tbody = document.getElementById('trips-table-body');
+      tbody.innerHTML = '';
+
+      if (state.trips.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="no-data">ยังไม่มีประวัติการเดินทางบันทึกในระบบ</td></tr>`;
+        return;
+      }
+
+      // Read only newest 10 trips to keep admin page compact
+      const recentTrips = state.trips.slice(0, 10);
+
+      recentTrips.forEach(trip => {
+        const start = parseLocalDate(trip.startDate);
+        const end = parseLocalDate(trip.endDate);
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        const formattedDate = formatThaiDateRange(trip.startDate, trip.endDate);
+        const regionClass = getRegionClass(trip.details);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${formattedDate}</td>
+          <td style="font-weight: 600;">${diffDays} วัน</td>
+          <td style="font-weight: 600; color: #93c5fd;">${trip.employeeName}</td>
+          <td>
+            <span class="region-tag ${regionClass}">${trip.details}</span>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function getRegionClass(details) {
+      if (details.includes('ภาคเหนือ')) return 'region-north';
+      if (details.includes('ภาคใต้')) return 'region-south';
+      if (details.includes('ภาคตะวันออก')) return 'region-east';
+      if (details.includes('ภาคตะวันตก')) return 'region-west';
+      if (details.includes('ภาคอีสาน')) return 'region-northeast';
+      return 'region-other';
+    }
+
+    function formatThaiDateRange(startStr, endStr) {
+      const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+      const start = parseLocalDate(startStr);
+      const end = parseLocalDate(endStr);
+      
+      if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return `${startStr} - ${endStr}`;
+      }
+
+      const startDay = start.getDate();
+      const startMonth = months[start.getMonth()];
+      const startYear = start.getFullYear() + 543;
+
+      const endDay = end.getDate();
+      const endMonth = months[end.getMonth()];
+      const endYear = end.getFullYear() + 543;
+
+      if (startYear === endYear) {
+        if (start.getMonth() === end.getMonth()) {
+          if (startDay === endDay) {
+            return `${startDay} ${startMonth} ${startYear.toString().substring(2)}`;
+          }
+          return `${startDay} - ${endDay} ${startMonth} ${startYear.toString().substring(2)}`;
+        }
+        return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${startYear.toString().substring(2)}`;
+      }
+      return `${startDay} ${startMonth} ${startYear.toString().substring(2)} - ${endDay} ${endMonth} ${endYear.toString().substring(2)}`;
+    }
+
+    async function initializeSheetQueue(names) {
+      try {
+        const response = await fetch(appConfig.sheetsUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          body: JSON.stringify({
+            action: 'initializeQueue',
+            employees: names
+          })
+        });
+        const res = await response.json();
+        return res.success;
+      } catch (err) {
+        console.error("Sheets initialization failed", err);
+        return false;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="th" class="unified-ui ui-holiday">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบบันทึกรายงานทำงานวันหยุด - Holiday Work Report System</title>
+<script src="../view-only.js"></script>
+<script src="../unified-theme.js?v=2"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Design Tokens & Theme Variables */
+    :root {
+      --font-th: 'Noto Sans Thai', sans-serif;
+      --font-en: 'Outfit', sans-serif;
+      --glass-bg: rgba(255, 255, 255, 0.45);
+      --glass-bg-hover: rgba(255, 255, 255, 0.6);
+      --glass-border: rgba(255, 255, 255, 0.3);
+      --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+      --text-main: #0f172a;      /* Slate 900 */
+      --text-muted: #475569;     /* Slate 600 */
+      --primary: #3b82f6;        /* Premium Blue */
+      --success: #10b981;        /* Emerald Green */
+      --warning: #f59e0b;        /* Amber Yellow */
+      --danger: #ef4444;         /* Rose Red */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-th);
+      color: var(--text-main);
+      min-height: 100vh;
+      /* Red -> Blue -> Yellow Animated Gradient */
+      background: linear-gradient(135deg, #ff4e50 0%, #0abde3 50%, #feca57 100%);
+      background-size: 400% 400%;
+      animation: gradientMove 15s ease infinite;
+      background-attachment: fixed;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Glassmorphism Styles */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      border-radius: 1.5rem; /* rounded-3xl */
+      padding: 1.5rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card-hover:hover {
+      transform: translateY(-4px);
+      background: var(--glass-bg-hover);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Typography Utilities */
+    h1, h2, h3, h4, h5, h6 {
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .font-en {
+      font-family: var(--font-en);
+    }
+
+    /* Header Bar */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 2rem;
+      width: 100%;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 1rem;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .title-main {
+      font-size: 1.25rem;
+      line-height: 1.2;
+    }
+    
+    .title-sub {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    /* Badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.825rem;
+      font-weight: 600;
+      padding: 0.375rem 1rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .status-badge.demo {
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, 0.3);
+      background: rgba(245, 158, 11, 0.1);
+    }
+
+    .status-badge.online {
+      color: var(--success);
+      border-color: rgba(16, 185, 129, 0.3);
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .btn-circle {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 50%;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.5);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-circle:hover {
+      background: rgba(255, 255, 255, 0.8);
+      transform: rotate(30deg);
+    }
+
+    /* Main Dashboard Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 380px 1fr;
+      }
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-label .required {
+      color: var(--danger);
+    }
+
+    .glass-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid var(--glass-border);
+      border-radius: 1rem;
+      padding: 0.75rem 1rem;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-input:focus {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    }
+
+    textarea.glass-input {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--text-main);
+      color: white;
+      border: none;
+      padding: 0.875rem 1.5rem;
+      border-radius: 1rem;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+      margin-top: 0.5rem;
+    }
+
+    .btn-submit:hover {
+      background: #1e293b;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    /* Summary Stats Grid */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1.25rem 1.5rem;
+    }
+
+    .stat-icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .stat-icon.primary { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+    .stat-icon.success { background: linear-gradient(135deg, #10b981, #047857); }
+    .stat-icon.warning { background: linear-gradient(135deg, #f59e0b, #b45309); }
+
+    .stat-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-val {
+      font-size: 1.75rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.825rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Layout right split */
+    .dashboard-main {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Chart / Progress List section */
+    .chart-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    @media (min-width: 768px) {
+      .chart-container {
+        grid-template-columns: 1.2fr 1fr;
+      }
+    }
+
+    .employee-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+      margin-bottom: 0.875rem;
+    }
+
+    .employee-bar-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 0.625rem;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--success));
+      border-radius: 9999px;
+      transition: width 1s ease-out;
+    }
+
+    /* Recent Feeds */
+    .feed-item {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .feed-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .feed-avatar {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      border: 1px solid var(--glass-border);
+    }
+
+    .feed-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .feed-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.125rem;
+    }
+
+    .feed-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .feed-date {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .feed-text {
+      font-size: 0.825rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Filter Controls */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .search-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .search-wrapper input {
+      padding-left: 2.5rem;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.875rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .date-filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .date-filter-group span {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .date-filter-group input {
+      width: 140px;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.75rem;
+      font-size: 0.875rem;
+    }
+
+    /* Tables Card */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 0.5rem;
+      border-radius: 1rem;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.4);
+      padding: 0.875rem 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    td {
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .td-date {
+      font-family: var(--font-en);
+      font-weight: 500;
+    }
+
+    .td-name {
+      font-weight: 600;
+    }
+
+    .td-details {
+      max-width: 300px;
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    /* Action Buttons in Grid */
+    .grid-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.5);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background: rgba(255, 255, 255, 0.8);
+      transform: translateY(-1px);
+    }
+
+    .btn-action.primary-action {
+      background: var(--primary);
+      color: white;
+      border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .btn-action.primary-action:hover {
+      background: #2563eb;
+      color: white;
+    }
+
+    /* Settings Modal Panel */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      width: 90%;
+      max-width: 500px;
+      border-radius: 1.5rem;
+      transform: scale(0.9);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.active .modal-content {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding-bottom: 0.75rem;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding-top: 1rem;
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .empty-icon {
+      opacity: 0.4;
+    }
+
+    /* Footer styling */
+    footer.app-footer {
+      margin-top: auto;
+      padding: 2rem 0 1rem 0;
+      text-align: center;
+      font-size: 0.825rem;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 500;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    footer.app-footer a {
+      color: white;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+
+    /* Delete button style */
+    .btn-delete-row {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-delete-row:hover {
+      background: var(--danger);
+      color: white;
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-delete-row:active {
+      transform: scale(0.95);
+    }
+
+    /* Send to Google Sheet button style */
+    .btn-send-sheet {
+      background: var(--success) !important;
+      color: white !important;
+    }
+
+    .btn-send-sheet:hover {
+      background: #059669 !important;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+
+    .btn-send-sheet:active {
+      transform: translateY(0);
+    }
+
+    /* Row deletion loading transition */
+    .row-deleting {
+      animation: fadeOut 0.5s forwards;
+      pointer-events: none;
+    }
+
+    @keyframes fadeOut {
+      0% { opacity: 1; transform: translateX(0); }
+      100% { opacity: 0; transform: translateX(-20px); background: rgba(239, 68, 68, 0.1); }
+    }
+  </style>
+  <link rel="stylesheet" href="../unified-theme.css?v=6">
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Top Glass Header -->
+    <header class="glass-card">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <i data-lucide="calendar-days" style="color: var(--primary); width: 24px; height: 24px;"></i>
+        </div>
+        <div>
+          <h1 class="title-main">บันทึกรายงานทำงานวันหยุด</h1>
+        </div>
+      </div>
+      
+      <!-- Connected directly to Google Sheets database -->
+    </header>
+
+    <!-- Main Grid Workspace -->
+    <main class="dashboard-grid">
+      
+      <!-- Left Column: Form Entry Card -->
+      <section class="glass-card">
+        <h2 style="display:flex; align-items:center; gap:0.5rem; margin-bottom:1.5rem; font-size:1.2rem;">
+          <i data-lucide="pen-tool" style="color: var(--primary);"></i>
+          บันทึกรายงานใหม่
+        </h2>
+        
+        <form id="reportForm">
+          <!-- วันทำงานวันหยุด* -->
+          <div class="form-group">
+            <label class="form-label" for="reportDate">
+              <i data-lucide="calendar" style="width: 16px; height: 16px; color: var(--primary);"></i>
+              วันทำงานวันหยุด <span class="required">*</span>
+            </label>
+            <input type="date" id="reportDate" class="glass-input font-en" required>
+          </div>
+
+          <!-- รายชื่อพนักงาน* -->
+          <div class="form-group">
+            <label class="form-label" for="reportEmployee">
+              <i data-lucide="user" style="width: 16px; height: 16px; color: var(--primary);"></i>
+              รายชื่อพนักงาน <span class="required">*</span>
+            </label>
+            <select id="reportEmployee" class="glass-input" required>
+              <option value="" disabled selected>-- เลือกรายชื่อพนักงาน --</option>
+              <option value="กษิเดช">กษิเดช</option>
+              <option value="กันต์ศักดิ์">กันต์ศักดิ์</option>
+              <option value="จีรศักดิ์">จีรศักดิ์</option>
+              <option value="ชาติชาย">ชาติชาย</option>
+              <option value="ณัฐชัย">ณัฐชัย</option>
+              <option value="ณัฐพงษ์">ณัฐพงษ์</option>
+              <option value="ธนบูรณ์">ธนบูรณ์</option>
+              <option value="ประวิทย์">ประวิทย์</option>
+              <option value="พงษ์ศักดิ์">พงษ์ศักดิ์</option>
+              <option value="ภาสพงษ์">ภาสพงษ์</option>
+              <option value="สมชาย">สมชาย</option>
+              <option value="อภิลักษณ์">อภิลักษณ์</option>
+              <option value="เอกเลิศ">เอกเลิศ</option>
+            </select>
+          </div>
+
+          <!-- รายละเอียดงาน* -->
+          <div class="form-group">
+            <label class="form-label" for="reportDetails">
+              <i data-lucide="clipboard-list" style="width: 16px; height: 16px; color: var(--primary);"></i>
+              รายละเอียดงาน <span class="required">*</span>
+            </label>
+            <textarea id="reportDetails" class="glass-input" placeholder="กรอกรายละเอียดภารกิจหรืองานที่ปฏิบัติในวันหยุด..." required></textarea>
+          </div>
+
+          <button type="submit" class="btn-submit" id="submitBtn">
+            <i data-lucide="save" style="width: 18px; height: 18px;"></i>
+            <span>บันทึกข้อมูล</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Right Column: Dashboard Main Section -->
+      <div class="dashboard-main">
+        
+        <!-- SaaS Counter Widgets -->
+        <section class="stats-row">
+          <div class="glass-card stat-card glass-card-hover">
+            <div class="stat-icon primary">
+              <i data-lucide="check-square" style="width: 22px; height: 22px;"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-val font-en" id="statTotalShifts">0</span>
+              <span class="stat-label">จำนวนวันทำงานรวม (วัน)</span>
+            </div>
+          </div>
+
+          <div class="glass-card stat-card glass-card-hover">
+            <div class="stat-icon success">
+              <i data-lucide="users" style="width: 22px; height: 22px;"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-val font-en" id="statActiveEmployees">0</span>
+              <span class="stat-label">พนักงานที่บันทึก (คน)</span>
+            </div>
+          </div>
+
+          <div class="glass-card stat-card glass-card-hover">
+            <div class="stat-icon warning">
+              <i data-lucide="clock" style="width: 22px; height: 22px;"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-val" id="statRecentSubmitter" style="font-size:1.15rem; font-weight:700; margin-top:0.25rem;">ไม่มีข้อมูล</span>
+              <span class="stat-label">บันทึกล่าสุด</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Stats Visualization & Feeds Grid -->
+        <div class="chart-container">
+          <!-- Work Shift distribution of employees -->
+          <section class="glass-card">
+            <h3 style="font-size:1rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+              <i data-lucide="bar-chart-3" style="color:var(--primary)"></i>
+              สถิติการทำงานแยกรายบุคคล
+            </h3>
+            <div id="chartBars" style="max-height: 250px; overflow-y: auto; padding-right: 0.25rem;">
+              <!-- Dynamic bars will render here -->
+              <p style="text-align:center; color:var(--text-muted); font-size:0.875rem; padding: 2rem 0;">ไม่มีข้อมูลสถิติ</p>
+            </div>
+          </section>
+
+          <!-- Recent Entries Feed -->
+          <section class="glass-card">
+            <h3 style="font-size:1rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+              <i data-lucide="activity" style="color:var(--success)"></i>
+              ฟีดบันทึกล่าสุด (Recent Feed)
+            </h3>
+            <div id="recentFeed" style="display:flex; flex-direction:column; gap:0.75rem;">
+              <!-- Dynamic feeds will render here -->
+              <p style="text-align:center; color:var(--text-muted); font-size:0.875rem; padding: 2rem 0;">ไม่มีบันทึกล่าสุด</p>
+            </div>
+          </section>
+        </div>
+
+        <!-- History Records Table Grid -->
+        <section class="glass-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.75rem;">
+            <h2 style="font-size:1.2rem; display:flex; align-items:center; gap:0.5rem;">
+              <i data-lucide="database" style="color: var(--primary);"></i>
+              ประวัติการบันทึกรายงานทำงานวันหยุด
+            </h2>
+            
+            <div class="header-actions">
+              <button class="btn-action" id="refreshBtn" title="รีเฟรชข้อมูล">
+                <i data-lucide="rotate-cw" style="width:16px; height:16px;"></i>
+                รีเฟรช
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Filters Bar -->
+          <div class="filter-bar">
+            <!-- Search Text -->
+            <div class="search-wrapper">
+              <i data-lucide="search" class="search-icon" style="width:18px; height:18px;"></i>
+              <input type="text" id="filterSearch" class="glass-input" placeholder="ค้นหาชื่อพนักงาน หรือรายละเอียดงาน...">
+            </div>
+
+            <!-- Date range picker -->
+            <div class="date-filter-group">
+              <span>ตั้งแต่</span>
+              <input type="date" id="filterStartDate" class="glass-input font-en">
+              <span>ถึง</span>
+              <input type="date" id="filterEndDate" class="glass-input font-en">
+            </div>
+
+            <button class="btn-action" id="clearFiltersBtn" title="ล้างตัวกรอง" style="padding:0.65rem 0.75rem; border-radius:0.75rem;">
+              <i data-lucide="filter-x" style="width:16px; height:16px;"></i>
+            </button>
+          </div>
+
+          <!-- Responsive Table -->
+          <div class="table-container">
+            <table id="recordsTable">
+              <thead>
+                <tr>
+                  <th style="width: 150px;">วันทำงานวันหยุด</th>
+                  <th style="width: 170px;">รายชื่อพนักงาน</th>
+                  <th>รายละเอียดงาน</th>
+                  <th style="width: 80px; text-align: center;">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="recordsBody">
+                <!-- Records will be generated here -->
+              </tbody>
+            </table>
+            
+            <div id="tableEmptyState" class="empty-state" style="display:none;">
+              <i data-lucide="inbox" class="empty-icon" style="width: 48px; height: 48px;"></i>
+              <p>ไม่พบข้อมูลที่ตรงกับตัวกรอง</p>
+            </div>
+          </div>
+
+          <div class="grid-actions">
+            <button class="btn-action primary-action" id="exportCsvBtn">
+              <i data-lucide="download" style="width:16px; height:16px;"></i>
+              ส่งออกไฟล์ CSV
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- App Footer -->
+
+  </div>
+
+  <!-- Setup connected database -->
+
+  <script src="../list-pagination.js?v=1"></script>
+  <script>
+    // Configuration & Data State
+    let state = {
+      apiUrl: 'https://script.google.com/macros/s/AKfycbxBahh1bmw1CLlYHVCQ8D9W7d-MuN93K6bECzfagooC1PmCwHRVF4XH5W45NAicfuby/exec',
+      records: []
+    };
+
+    // Initialize UI Elements
+    document.addEventListener('DOMContentLoaded', () => {
+      // Setup Date Picker to default to today's date in local time
+      const today = new Date().toLocaleDateString('en-CA'); // format: YYYY-MM-DD
+      document.getElementById('reportDate').value = today;
+
+      // Check URL and sync database
+      initDatabase();
+
+      // Register Events
+      registerEventHandlers();
+      
+      // Initialize Lucide Icons
+      lucide.createIcons();
+    });
+
+    // Initialize Database
+    function initDatabase() {
+      loadData();
+    }
+
+    // Populate Employee Select Dropdown
+    function populateEmployeeDropdown(employees) {
+      const select = document.getElementById('reportEmployee');
+      if (!select) return;
+      
+      // Keep track of currently selected employee
+      const currentValue = select.value;
+      
+      // If employees list is empty or undefined, use fallback list
+      const employeeList = (employees && employees.length > 0) ? employees : [
+        "กษิเดช", "กันต์ศักดิ์", "จีรศักดิ์", "ชาติชาย", "ณัฐชัย", "ณัฐพงษ์", 
+        "ธนบูรณ์", "ประวิทย์", "พงษ์ศักดิ์", "ภาสพงษ์", "สมชาย", "อภิลักษณ์", "เอกเลิศ"
+      ];
+      
+      // Rebuild options list
+      let optionsHtml = `<option value="" disabled selected>-- เลือกรายชื่อพนักงาน --</option>`;
+      employeeList.forEach(emp => {
+        optionsHtml += `<option value="${escapeHtml(emp)}">${escapeHtml(emp)}</option>`;
+      });
+      
+      select.innerHTML = optionsHtml;
+      
+      // Restore selected value if it still exists in the list
+      if (currentValue && employeeList.includes(currentValue)) {
+        select.value = currentValue;
+      }
+    }
+
+    // Load Data based on state URL
+    async function loadData() {
+      showTableLoading(true);
+      
+      try {
+        const response = await fetch(state.apiUrl, { method: 'GET' });
+        if (!response.ok) throw new Error('API server returned error status');
+        
+        const result = await response.json();
+        if (result.status === 'success') {
+          state.records = result.data || [];
+          if (result.employees) {
+            populateEmployeeDropdown(result.employees);
+          } else {
+            populateEmployeeDropdown([]);
+          }
+          renderDashboard();
+        } else {
+          throw new Error(result.message || 'Unknown error occurred in Apps Script');
+        }
+      } catch (error) {
+        console.error(error);
+        
+        let htmlReason = '';
+        if (error.message.includes('Failed to fetch') || error.message.includes('fetch')) {
+          htmlReason = `
+            <div style="text-align: left; font-size: 0.9rem; margin-top: 10px; line-height: 1.5; color: var(--text-muted);">
+              <p style="font-weight: bold; color: var(--danger); margin-bottom: 5px;">ปัญหาเกิดได้จากสาเหตุดังนี้:</p>
+              <ol style="margin-left: 20px; display: flex; flex-direction: column; gap: 4px;">
+                <li><strong>สิทธิ์เข้าถึงเว็บแอป:</strong> ลืมเลือก <i>Who has access</i> เป็น <strong>Anyone (ทุกคน)</strong> ใน Apps Script</li>
+                <li><strong>การอนุมัติสิทธิ์:</strong> ยังไม่ได้กดอนุมัติการเข้าถึงสิทธิ์ Google Sheets ในหน้า Deploy (Authorize Access)</li>
+                <li><strong>URL ไม่ถูกต้อง:</strong> คัดลอกลิงก์ Web App มาผิดตัว หรือลิงก์ยังไม่เปิดใช้งาน (ยังไม่ได้ Deploy จริง)</li>
+                <li><strong>AdBlocker / VPN:</strong> บราวเซอร์ปิดกั้น API ของ Google หรือสลับเชื่อมต่อ VPN นอกเครือข่าย</li>
+              </ol>
+            </div>
+          `;
+        } else {
+          htmlReason = `<p style="margin-top: 10px;">รายละเอียด: ${error.message}</p>`;
+        }
+        
+        Swal.fire({
+          icon: 'error',
+          title: 'การเชื่อมต่อฐานข้อมูลขัดข้อง',
+          html: `ไม่สามารถดึงข้อมูลจาก Google Sheets ได้ ${htmlReason}`,
+          confirmButtonText: 'รับทราบ',
+          confirmButtonColor: 'var(--primary)'
+        });
+        state.records = [];
+        populateEmployeeDropdown([]);
+        renderDashboard();
+      }
+    }
+
+    // Show/Hide Loading state in table
+    function showTableLoading(isLoading) {
+      const tbody = document.getElementById('recordsBody');
+      if (isLoading) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align:center; padding:3rem 0; color:var(--text-muted);">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:0.75rem;">
+                <i data-lucide="loader-2" class="animate-spin" style="width:36px; height:36px; animation: spin 1.5s linear infinite; color:var(--primary);"></i>
+                <span>กำลังโหลดข้อมูล...</span>
+              </div>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+      }
+    }
+
+    // CSS spin keyframe definition injected dynamically
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+    `;
+    document.head.appendChild(styleSheet);
+
+    // HTML Escaping Utility
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Render Table, Stats, Chart, and Activity Feed
+    const listPager = createListPager(document.querySelector('.table-container'), renderDashboard);
+    function renderDashboard() {
+      // Get Search/Filter Values
+      const searchQuery = document.getElementById('filterSearch').value.toLowerCase().trim();
+      const startDate = document.getElementById('filterStartDate').value;
+      const endDate = document.getElementById('filterEndDate').value;
+
+      // Filter Logic
+      const filteredRecords = state.records.filter(rec => {
+        // 1. Text Search Filter
+        const matchesText = !searchQuery || 
+                            rec.employee.toLowerCase().includes(searchQuery) || 
+                            rec.details.toLowerCase().includes(searchQuery);
+
+        // 2. Date Range Filter
+        let matchesDate = true;
+        if (startDate) {
+          matchesDate = matchesDate && (rec.date >= startDate);
+        }
+        if (endDate) {
+          matchesDate = matchesDate && (rec.date <= endDate);
+        }
+
+        return matchesText && matchesDate;
+      });
+      const pageRecords = listPager.page(filteredRecords);
+
+      // 1. Render Table Rows
+      const tbody = document.getElementById('recordsBody');
+      const emptyState = document.getElementById('tableEmptyState');
+      
+      if (filteredRecords.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'flex';
+      } else {
+        emptyState.style.display = 'none';
+        tbody.innerHTML = pageRecords.map(rec => {
+          // Format date for Thai layout: dd/mm/yyyy (handles ISO date strings and GMT timestamps)
+          let displayDate = rec.date || '';
+          if (displayDate) {
+            if (displayDate.includes('-') && displayDate.split('-').length === 3) {
+              const dateParts = displayDate.split('-');
+              displayDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+            } else {
+              try {
+                const parsedDate = new Date(displayDate);
+                if (!isNaN(parsedDate.getTime())) {
+                  const day = String(parsedDate.getDate()).padStart(2, '0');
+                  const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                  const year = parsedDate.getFullYear();
+                  displayDate = `${day}/${month}/${year}`;
+                }
+              } catch (e) {
+                console.error(e);
+              }
+            }
+          }
+          
+          return `
+            <tr data-row-number="${rec.rowNumber}">
+              <td class="td-date">${displayDate}</td>
+              <td class="td-name">${rec.employee}</td>
+              <td class="td-details">${escapeHtml(rec.details)}</td>
+              <td style="text-align: center;">
+                <button class="btn-delete-row" 
+                        data-date="${rec.date}" 
+                        data-employee="${rec.employee}" 
+                        data-details="${escapeHtml(rec.details)}" 
+                        data-row-number="${rec.rowNumber}" 
+                        title="ลบข้อมูล">
+                  <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 2. Render SaaS Header Counter Statistics (Based on FULL dataset)
+      const totalShifts = state.records.length;
+      document.getElementById('statTotalShifts').innerText = totalShifts;
+
+      // Count unique employees
+      const uniqueEmployees = new Set(state.records.map(r => r.employee));
+      document.getElementById('statActiveEmployees').innerText = uniqueEmployees.size;
+
+      // Recent submitter name
+      if (totalShifts > 0) {
+        // Sort by timestamp if available, otherwise array index 0 (which is sorted descending)
+        const sortedRecords = [...state.records];
+        document.getElementById('statRecentSubmitter').innerText = sortedRecords[0].employee;
+      } else {
+        document.getElementById('statRecentSubmitter').innerText = 'ไม่มีข้อมูล';
+      }
+
+      // 3. Render Employee statistics list (Chart Widget)
+      const empCounts = {};
+      state.records.forEach(r => {
+        empCounts[r.employee] = (empCounts[r.employee] || 0) + 1;
+      });
+
+      // Sort employee counts descending
+      const sortedEmpStats = Object.entries(empCounts).sort((a, b) => b[1] - a[1]);
+      const maxCount = sortedEmpStats.length > 0 ? sortedEmpStats[0][1] : 1;
+      const chartBarsContainer = document.getElementById('chartBars');
+
+      if (sortedEmpStats.length === 0) {
+        chartBarsContainer.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.875rem; padding: 2.5rem 0;">ไม่มีข้อมูลสถิติ</p>`;
+      } else {
+        chartBarsContainer.innerHTML = sortedEmpStats.map(([name, count]) => {
+          const percent = (count / maxCount) * 100;
+          return `
+            <div class="employee-bar">
+              <div class="employee-bar-info">
+                <span>${name}</span>
+                <span class="font-en">${count} วัน (${Math.round((count/totalShifts)*100)}%)</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: ${percent}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 4. Render Recent Feeds (Last 3 records)
+      const recentFeedContainer = document.getElementById('recentFeed');
+      const feedRecords = state.records.slice(0, 3);
+
+      if (feedRecords.length === 0) {
+        recentFeedContainer.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.875rem; padding: 2.5rem 0;">ไม่มีบันทึกล่าสุด</p>`;
+      } else {
+        recentFeedContainer.innerHTML = feedRecords.map(rec => {
+          const initial = rec.employee.charAt(0);
+          
+          // Format date to relative or short format
+          const dateParts = rec.date.split('-');
+          const displayDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}` : rec.date;
+
+          return `
+            <div class="feed-item">
+              <div class="feed-avatar">${initial}</div>
+              <div class="feed-details">
+                <div class="feed-header">
+                  <span class="feed-name">${rec.employee}</span>
+                  <span class="feed-date font-en">${displayDate}</span>
+                </div>
+                <div class="feed-text" title="${escapeHtml(rec.details)}">${escapeHtml(rec.details)}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Re-initialize Lucide Icons for dynamically rendered icons (like trash-2)
+      lucide.createIcons();
+    }
+
+    // Register all interactivity handlers
+    function registerEventHandlers() {
+      // 1. Submit Form
+      const form = document.getElementById('reportForm');
+      form.addEventListener('submit', handleFormSubmit);
+
+      // 2. Search & Filters events
+      const filterAndRender = () => { listPager.reset(); renderDashboard(); };
+      document.getElementById('filterSearch').addEventListener('input', filterAndRender);
+      document.getElementById('filterStartDate').addEventListener('change', filterAndRender);
+      document.getElementById('filterEndDate').addEventListener('change', filterAndRender);
+      
+      document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+        document.getElementById('filterSearch').value = '';
+        document.getElementById('filterStartDate').value = '';
+        document.getElementById('filterEndDate').value = '';
+        listPager.reset();
+        renderDashboard();
+        
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'ล้างตัวกรองทั้งหมดแล้ว',
+          showConfirmButton: false,
+          timer: 1500
+        });
+      });
+
+      // 3. Refresh Button
+      document.getElementById('refreshBtn').addEventListener('click', () => {
+        loadData();
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'รีเฟรชข้อมูลแล้ว',
+          showConfirmButton: false,
+          timer: 1200
+        });
+      });
+
+      // 4. CSV Export Button
+      document.getElementById('exportCsvBtn').addEventListener('click', handleCsvExport);
+
+      // 5. Delete Button Event Delegation
+      document.getElementById('recordsTable').addEventListener('click', async (e) => {
+        const btn = e.target.closest('.btn-delete-row');
+        if (!btn) return;
+        
+        const date = btn.dataset.date;
+        const employee = btn.dataset.employee;
+        const details = btn.dataset.details;
+        const rowNumber = parseInt(btn.dataset.rowNumber, 10);
+        
+        const tr = btn.closest('tr');
+        await handleDeleteRecord({ date, employee, details, rowNumber }, tr);
+      });
+    }
+
+    // Handle Form Submit (POST to Apps Script)
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const dateVal = document.getElementById('reportDate').value;
+      const employeeVal = document.getElementById('reportEmployee').value;
+      const detailsVal = document.getElementById('reportDetails').value.trim();
+
+      if (!dateVal || !employeeVal || !detailsVal) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ข้อมูลไม่ครบถ้วน',
+          text: 'กรุณากรอกข้อมูลในช่องที่มีเครื่องหมายดอกจัน (*) ให้ครบถ้วน',
+          confirmButtonText: 'เข้าใจแล้ว',
+          confirmButtonColor: 'var(--warning)'
+        });
+        return;
+      }
+
+      // Client-side Duplicate Check
+      const isDuplicate = state.records.some(r => 
+        r.date === dateVal && r.employee === employeeVal && r.details === detailsVal
+      );
+      if (isDuplicate) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ข้อมูลซ้ำซ้อน',
+          text: 'พบรายงานการทำงานนี้ในตารางประวัติอยู่แล้ว ระบบป้องกันการส่งข้อมูลซ้ำ',
+          confirmButtonText: 'รับทราบ',
+          confirmButtonColor: 'var(--warning)'
+        });
+        return;
+      }
+
+      // Show Loading Spinner Popup
+      Swal.fire({
+        title: 'กำลังบันทึกข้อมูล...',
+        text: 'กำลังตรวจสอบข้อมูลและส่งต่อไปยัง Google Sheet',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const payload = {
+        date: dateVal,
+        employee: employeeVal,
+        details: detailsVal
+      };
+
+      // Connect to Sheets
+      try {
+        const response = await fetch(state.apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain' // Workaround to prevent CORS preflight check on POST
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error('การส่งข้อมูลล้มเหลว แม่ข่ายปฏิเสธการเชื่อมต่อ');
+        }
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+          Swal.fire({
+            icon: 'success',
+            title: 'บันทึกและส่งข้อมูลสำเร็จ!',
+            text: 'ส่งรายงานทำงานวันหยุดเข้าสู่ Google Sheet เรียบร้อยแล้ว',
+            confirmButtonText: 'ตกลง',
+            confirmButtonColor: 'var(--success)'
+          });
+
+          // Reset Form description, keeping employee selected for speed and date
+          document.getElementById('reportDetails').value = '';
+          
+          // Reload list to get the latest rowNumber mapping
+          loadData();
+        } else {
+          throw new Error(result.message || 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูลฝั่งแม่ข่าย');
+        }
+
+      } catch (error) {
+        console.error(error);
+        Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาดในการส่งข้อมูล',
+          text: 'ไม่สามารถบันทึกเข้า Google Sheets ได้\nรายละเอียด: ' + error.message,
+          confirmButtonText: 'ตกลง',
+          confirmButtonColor: 'var(--danger)'
+        });
+      }
+    }
+
+    // Handle Delete Record Action
+    async function handleDeleteRecord(record, tr) {
+      // Format display date for alert
+      let thaiFormatDate = record.date;
+      if (record.date.includes('-')) {
+        const parts = record.date.split('-');
+        thaiFormatDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+
+      const confirmResult = await Swal.fire({
+        title: 'ยืนยันการลบข้อมูล?',
+        text: `คุณต้องการลบรายงานของพนักงาน "${record.employee}" วันทำงานวันหยุดวันที่ ${thaiFormatDate} หรือไม่?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'var(--danger)',
+        cancelButtonColor: 'var(--text-muted)',
+        confirmButtonText: 'ใช่, ต้องการลบ',
+        cancelButtonText: 'ยกเลิก'
+      });
+
+      if (!confirmResult.isConfirmed) return;
+
+      // Show Loading Spinner
+      Swal.fire({
+        title: 'กำลังลบข้อมูล...',
+        text: 'กรุณารอสักครู่',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      // Animate row deletion on table
+      if (tr) {
+        tr.classList.add('row-deleting');
+      }
+
+      try {
+        const response = await fetch(state.apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain' // Bypasses CORS Preflight OPTIONS check
+          },
+          body: JSON.stringify({
+            action: 'delete',
+            date: record.date,
+            employee: record.employee,
+            details: record.details,
+            rowNumber: record.rowNumber
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('ไม่สามารถลบข้อมูลได้ แม่ข่ายปฏิเสธการเชื่อมต่อ');
+        }
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          Swal.fire({
+            icon: 'success',
+            title: 'ลบข้อมูลสำเร็จ!',
+            text: result.message || 'ลบข้อมูลออกจาก Google Sheets เรียบร้อยแล้ว',
+            confirmButtonText: 'ตกลง',
+            confirmButtonColor: 'var(--success)'
+          });
+
+          // Instantly update UI State by filtering out deleted record
+          state.records = state.records.filter(r => 
+            !(r.date === record.date && r.employee === record.employee && r.details === record.details)
+          );
+          renderDashboard();
+        } else {
+          throw new Error(result.message || 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์ลบข้อมูล');
+        }
+      } catch (error) {
+        console.error(error);
+        // Remove animation if delete failed
+        if (tr) {
+          tr.classList.remove('row-deleting');
+        }
+        Swal.fire({
+          icon: 'error',
+          title: 'ลบข้อมูลไม่สำเร็จ',
+          text: 'ไม่สามารถทำรายการลบข้อมูลได้\nรายละเอียด: ' + error.message,
+          confirmButtonText: 'ตกลง',
+          confirmButtonColor: 'var(--danger)'
+        });
+      }
+    }
+
+    // CSV Export Handler
+    function handleCsvExport() {
+      if (state.records.length === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ไม่มีข้อมูลสำหรับส่งออก',
+          text: 'กรุณาบันทึกข้อมูลก่อนทำรายการส่งออกไฟล์',
+          confirmButtonText: 'ตกลง',
+          confirmButtonColor: 'var(--warning)'
+        });
+        return;
+      }
+
+      // Build CSV Content. Adding UTF-8 BOM for Thai letters Excel compatibility
+      let csvContent = "\uFEFF";
+      csvContent += "วันทำงานวันหยุด,รายชื่อพนักงาน,รายละเอียดงาน\r\n";
+
+      state.records.forEach(rec => {
+        // Format date
+        let formattedDate = rec.date || '';
+        if (formattedDate) {
+          if (formattedDate.includes('-') && formattedDate.split('-').length === 3) {
+            const dateParts = formattedDate.split('-');
+            formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+          } else {
+            try {
+              const parsedDate = new Date(formattedDate);
+              if (!isNaN(parsedDate.getTime())) {
+                const day = String(parsedDate.getDate()).padStart(2, '0');
+                const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+                const year = parsedDate.getFullYear();
+                formattedDate = `${day}/${month}/${year}`;
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        }
+        
+        // Escape details quotes
+        const detailsEscaped = rec.details.replace(/"/g, '""');
+        
+        csvContent += `"${formattedDate}","${rec.employee}","${detailsEscaped}"\r\n`;
+      });
+
+      // Download trigger
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `รายงานทำงานวันหยุด_ส่งออก_${new Date().toLocaleDateString('en-CA')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>

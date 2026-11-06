@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="th" class="unified-ui ui-parts">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Spare Part List — ดึงข้อมูลแบบ Real-time จาก Google Sheets สำหรับทีมช่างเลเซอร์">
+    <title>Spare Part List</title>
+<script src="../view-only.js"></script>
+<script src="../unified-theme.js?v=2"></script>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Spare Part List">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%232563eb' rx='100'/%3E%3Cpath d='M344.5 298c15-23.6 23.8-51.6 23.8-81.7 0-84.1-68.1-152.3-152.1-152.3C132.1 64 64 132.2 64 216.3c0 84.1 68.1 152.3 152.1 152.3 30.5 0 58.9-9 82.7-24.4l69 69c3.4 3.4 8.3 5.4 13.3 5.4s9.9-2 13.3-5.4c7.4-7.4 7.4-19.4 0-26.7l-49.9-48.5zm-128.3 38.6c-66.2 0-120.1-53.9-120.1-120.3s53.9-120.3 120.1-120.3 120.1 53.9 120.1 120.3-53.9 120.3-120.1 120.3z' fill='%23fff'/%3E%3C/svg%3E">
+    <link rel="manifest" id="manifest-link">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- PapaParse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <!-- Google Fonts: Sarabun + Noto Sans Thai -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ============================================
+           DESIGN SYSTEM — CSS Custom Properties
+           ============================================ */
+        :root {
+            --blue-deep:   #1e3a8a;
+            --blue-mid:    #2563eb;
+            --blue-light:  #3b82f6;
+            --yellow-mid:  #d97706;
+            --yellow-light:#fbbf24;
+            --red-mid:     #dc2626;
+            --red-deep:    #991b1b;
+
+            --glass-bg:    rgba(255, 255, 255, 0.12);
+            --glass-bg-2:  rgba(255, 255, 255, 0.18);
+            --glass-bg-3:  rgba(255, 255, 255, 0.08);
+            --glass-border:rgba(255, 255, 255, 0.25);
+            --glass-shadow:0 8px 32px rgba(0, 0, 0, 0.18);
+
+            --radius-xl:   1rem;
+            --radius-2xl:  1.5rem;
+            --radius-3xl:  2rem;
+
+            --transition-fast:  all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-mid:   all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow:  all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ============================================
+           BASE & BODY
+           ============================================ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        body {
+            font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
+            background: linear-gradient(135deg,
+                #E5FFFF 0%,
+                #EBFBFA 25%,
+                #FFFFE6 50%,
+                #FFF0FA 75%,
+                #FFE6FF 100%
+            );
+            background-attachment: fixed;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            position: relative;
+            color: #1e293b;
+        }
+
+        /* Soft noise overlay for depth */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 10%, rgba(255, 255, 255, 0.5) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 90%, rgba(15, 23, 42, 0.03) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ============================================
+           LAYOUT SHELL
+           ============================================ */
+        .app-shell {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ============================================
+           HEADER — Glassmorphism Light
+           ============================================ */
+        .app-header {
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 30px rgba(15, 23, 42, 0.04);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: justify-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            user-select: none;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-icon-wrap {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+            flex-shrink: 0;
+        }
+
+        .header-icon-wrap svg {
+            color: #fff;
+            width: 22px;
+            height: 22px;
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+        }
+
+        .header-subtitle {
+            font-size: 0.72rem;
+            color: #475569;
+            font-weight: 500;
+            margin-top: 1px;
+        }
+
+        /* ---- Search Controls ---- */
+        .header-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-wrap {
+            position: relative;
+        }
+
+        .search-wrap .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            pointer-events: none;
+            width: 16px;
+            height: 16px;
+        }
+
+        .search-input {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 10px;
+            color: #0f172a;
+            padding: 8px 10px 8px 32px;
+            font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
+            font-size: 0.82rem;
+            width: 160px;
+            outline: none;
+            transition: var(--transition-fast);
+            backdrop-filter: blur(8px);
+        }
+
+        .search-input::placeholder {
+            color: #64748b;
+        }
+
+        .search-input:focus {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            color: #0f172a;
+        }
+
+        .search-input:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        /* ---- Refresh Button ---- */
+        .refresh-btn {
+            background: rgba(37, 99, 235, 0.08);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            border-radius: 10px;
+            color: #1d4ed8;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            backdrop-filter: blur(8px);
+            flex-shrink: 0;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .refresh-btn:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-color: transparent;
+            color: #ffffff;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .refresh-btn:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        .refresh-btn svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.5s ease;
+        }
+
+        .refresh-btn:hover svg {
+            transform: rotate(180deg);
+        }
+
+        /* ============================================
+           STATUS CONTAINER (Loading / Error)
+           ============================================ */
+        #statusContainer {
+            flex-shrink: 0;
+            padding: 48px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ---- Loading Spinner ---- */
+        #loadingIndicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .spinner-ring {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg,
+                #3b82f6 0%,
+                #f59e0b 40%,
+                #dc2626 70%,
+                transparent 100%
+            );
+            animation: spin 1s linear infinite;
+            position: relative;
+        }
+
+        .spinner-ring::after {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            backdrop-filter: blur(4px);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #1e293b;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            animation: pulse-opacity 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-opacity {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.55; }
+        }
+
+        /* ---- Error Card ---- */
+        #errorMessage {
+            background: rgba(239, 68, 68, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: var(--radius-2xl);
+            padding: 28px 24px;
+            max-width: 520px;
+            width: 100%;
+            color: #991b1b;
+            box-shadow: 0 8px 32px rgba(220, 38, 38, 0.08);
+            animation: fadeInUp 0.3s ease;
+        }
+
+        #errorMessage .error-icon-wrap {
+            width: 48px;
+            height: 48px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+        }
+
+        #errorMessage .error-icon-wrap svg {
+            width: 26px;
+            height: 26px;
+            color: #dc2626;
+        }
+
+        #errorMessage .error-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #991b1b;
+            text-align: center;
+            margin-bottom: 14px;
+        }
+
+        #errorMessage .error-body {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 0.78rem;
+            color: #475569;
+        }
+
+        #errorMessage .error-body strong {
+            color: #dc2626;
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+        }
+
+        #errorMessage .error-body ul {
+            list-style: disc;
+            padding-left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        #errorDetail {
+            text-align: center;
+            font-size: 0.68rem;
+            color: #dc2626;
+            opacity: 0.8;
+            margin-top: 12px;
+        }
+
+        /* ============================================
+           TABLE WRAPPER
+           ============================================ */
+        #tableWrapper {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            cursor: grab;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #tableWrapper:active {
+            cursor: grabbing;
+        }
+
+        /* Scrollbar */
+        #tableWrapper::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        #tableWrapper::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.02);
+        }
+        #tableWrapper::-webkit-scrollbar-thumb {
+            background: rgba(15, 23, 42, 0.15);
+            border-radius: 4px;
+        }
+        #tableWrapper::-webkit-scrollbar-thumb:hover {
+            background: rgba(15, 23, 42, 0.25);
+        }
+
+        /* ============================================
+           TABLE
+           ============================================ */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: max-content;
+        }
+
+        /* ---- Table Head ---- */
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        thead tr {
+            background: rgba(241, 245, 249, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        thead th {
+            padding: 13px 18px;
+            font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #334155;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+            user-select: none;
+            transition: var(--transition-fast);
+        }
+
+        thead th.col-highlight {
+            color: #2563eb;
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        /* Sticky copy column header */
+        thead th.col-sticky {
+            position: sticky;
+            right: 0;
+            background: rgba(241, 245, 249, 0.9);
+            backdrop-filter: blur(16px);
+            box-shadow: -4px 0 12px rgba(15, 23, 42, 0.03);
+            text-align: center;
+        }
+
+        /* ---- Table Body ---- */
+        tbody tr {
+            transition: var(--transition-fast);
+            border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+        }
+
+        tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        tbody tr:nth-child(odd) {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        tbody tr:hover {
+            background: rgba(37, 99, 235, 0.06) !important;
+        }
+
+        tbody td {
+            padding: 10px 18px;
+            font-size: 0.8rem;
+            color: #475569;
+            white-space: nowrap;
+            transition: var(--transition-fast);
+            border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+        }
+
+        tbody tr:hover td {
+            color: #0f172a;
+        }
+
+        tbody td.cell-first {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        tbody td.cell-first-search {
+            font-weight: 700;
+            color: #2563eb;
+        }
+
+        tbody td.cell-placeholder {
+            color: rgba(148, 163, 184, 0.6);
+        }
+
+        /* Sticky copy column body */
+        td.col-sticky {
+            position: sticky;
+            right: 0;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(12px);
+            box-shadow: -4px 0 12px rgba(15, 23, 42, 0.03);
+            text-align: center;
+            transition: var(--transition-fast);
+        }
+
+        tbody tr:hover td.col-sticky {
+            background: rgba(239, 246, 255, 0.8);
+        }
+
+        /* ---- Copy Button ---- */
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: rgba(37, 99, 235, 0.06);
+            border: 1px solid rgba(37, 99, 235, 0.15);
+            color: #2563eb;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            outline: none;
+        }
+
+        .copy-btn:hover {
+            background: #2563eb;
+            border-color: transparent;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .copy-btn svg {
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+        }
+
+        /* ---- No Results ---- */
+        #noResults {
+            padding: 60px 20px;
+            text-align: center;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        #noResults .no-results-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+
+        #noResults .no-results-icon svg {
+            width: 28px;
+            height: 28px;
+            color: #64748b;
+        }
+
+        #noResults p {
+            color: #334155;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        #noResults .no-results-sub {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-top: 6px;
+            font-weight: 400;
+        }
+
+        /* ============================================
+           FOOTER — Glassmorphism Light
+           ============================================ */
+        .app-footer {
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            user-select: none;
+        }
+
+        .footer-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.65);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 0.72rem;
+            color: #475569;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
+        }
+
+        .footer-chip svg {
+            width: 13px;
+            height: 13px;
+            color: #2563eb;
+        }
+
+        .footer-chip span {
+            color: #0f172a;
+        }
+
+        /* ============================================
+           ANIMATIONS
+           ============================================ */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .table-fade-in {
+            animation: fadeIn 0.35s ease;
+        }
+
+        /* Image hover zoom */
+        .img-zoom-wrap {
+            position: relative;
+            display: inline-block;
+        }
+
+        .img-zoom-wrap img {
+            height: 40px;
+            width: auto;
+            max-width: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: zoom-in;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .img-zoom-wrap:hover img {
+            transform: scale(2.6);
+            z-index: 50;
+            position: relative;
+            box-shadow: 0 12px 40px rgba(15, 23, 42, 0.15);
+        }
+
+        /* Link style inside table */
+        .table-link {
+            color: #2563eb;
+            text-decoration: underline;
+            transition: var(--transition-fast);
+            font-weight: 500;
+        }
+
+        .table-link:hover {
+            color: #1d4ed8;
+        }
+
+        /* ============================================
+           UTILITY
+           ============================================ */
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 640px) {
+            .app-header {
+                padding: 11px 14px;
+            }
+
+            .header-title {
+                font-size: 1.05rem;
+            }
+
+            .header-subtitle {
+                font-size: 0.65rem;
+            }
+
+            .header-icon-wrap {
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+            }
+
+            .search-input {
+                width: 130px;
+                font-size: 0.78rem;
+                padding: 7px 8px 7px 28px;
+            }
+
+            .search-wrap .search-icon {
+                width: 14px;
+                height: 14px;
+                left: 8px;
+            }
+
+            thead th {
+                padding: 11px 12px;
+                font-size: 0.65rem;
+            }
+
+            tbody td {
+                padding: 9px 12px;
+                font-size: 0.75rem;
+            }
+
+            .copy-btn {
+                width: 30px;
+                height: 30px;
+            }
+
+            .copy-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+            .app-footer {
+                padding: 8px 14px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .footer-chip {
+                font-size: 0.65rem;
+            }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .search-input {
+                width: 145px;
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .search-input {
+                width: 175px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="../unified-theme.css?v=6">
+</head>
+<body>
+
+    <div class="app-shell">
+
+        <!-- ============ HEADER ============ -->
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="header-icon-wrap">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="header-title">Spare Part List</div>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <!-- Search 1 -->
+                <div class="search-wrap">
+                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input
+                        type="text"
+                        id="searchInput1"
+                        placeholder="ค้นหาคำที่ 1..."
+                        class="search-input"
+                        disabled
+                        autocomplete="off"
+                    >
+                </div>
+
+                <!-- Search 2 -->
+                <div class="search-wrap">
+                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input
+                        type="text"
+                        id="searchInput2"
+                        placeholder="ค้นหาคำที่ 2..."
+                        class="search-input"
+                        disabled
+                        autocomplete="off"
+                    >
+                </div>
+
+                <!-- Refresh Button -->
+                <button id="refreshBtn" class="refresh-btn" title="อัปเดตข้อมูลล่าสุด">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    <span class="hidden sm:inline">รีเฟรช</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- ============ STATUS (Loading / Error) ============ -->
+        <div id="statusContainer" class="flex-1 flex items-center justify-center p-6">
+            <!-- Loading -->
+            <div id="loadingIndicator" class="flex flex-col items-center gap-4">
+                <div class="spinner-ring"></div>
+                <p class="loading-text">กำลังโหลดข้อมูลจาก Google Sheets...</p>
+            </div>
+
+            <!-- Error -->
+            <div id="errorMessage" class="hidden">
+                <div class="error-icon-wrap">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <p class="error-title">⚠️ ไม่สามารถดึงข้อมูลได้</p>
+                <div class="error-body">
+                    <strong>สาเหตุที่เป็นไปได้:</strong>
+                    <ul>
+                        <li>รันไฟล์นี้จากเครื่องโดยตรง</li>
+                        <li>ส่วนขยายบล็อกโฆษณา (Adblocker) ไปบล็อกการเชื่อมต่อ</li>
+                        <li>เครือข่ายอินเทอร์เน็ตที่ทำงาน/แอนตี้ไวรัสบล็อกการดึงข้อมูล</li>
+                    </ul>
+                </div>
+                <p id="errorDetail"></p>
+            </div>
+        </div>
+
+        <!-- ============ TABLE ============ -->
+        <div id="tableWrapper" class="hidden flex-1 overflow-auto table-fade-in">
+            <table class="w-full text-left border-collapse min-w-max">
+                <thead id="tableHead">
+                    <!-- Headers injected by JS -->
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Rows injected by JS -->
+                </tbody>
+            </table>
+
+            <!-- No Results -->
+            <div id="noResults" class="hidden">
+                <div class="no-results-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <p>ไม่พบข้อมูลที่ค้นหา</p>
+                <p class="no-results-sub">ลองเปลี่ยนคำค้นหาใหม่ดูอีกครั้ง</p>
+            </div>
+        </div>
+
+        <!-- ============ FOOTER ============ -->
+        <footer class="app-footer">
+            <div class="footer-chip">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                อัปเดตล่าสุด: <span id="lastUpdated">-</span>
+            </div>
+            <div class="footer-chip">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                รายการทั้งหมด: <span id="rowCount">0</span> รายการ
+            </div>
+        </footer>
+
+    </div>
+
+    <script src="../list-pagination.js?v=1"></script>
+    <script>
+        // ==========================================
+        // ระบบ Progressive Web App (PWA) ให้ติดตั้งเป็น App มือถือได้
+        // ==========================================
+        const svgIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%232563eb' rx='100'/%3E%3Cpath d='M344.5 298c15-23.6 23.8-51.6 23.8-81.7 0-84.1-68.1-152.3-152.1-152.3C132.1 64 64 132.2 64 216.3c0 84.1 68.1 152.3 152.1 152.3 30.5 0 58.9-9 82.7-24.4l69 69c3.4 3.4 8.3 5.4 13.3 5.4s9.9-2 13.3-5.4c7.4-7.4 7.4-19.4 0-26.7l-49.9-48.5zm-128.3 38.6c-66.2 0-120.1-53.9-120.1-120.3s53.9-120.3 120.1-120.3 120.1 53.9 120.1 120.3-53.9 120.3-120.1 120.3z' fill='%23fff'/%3E%3C/svg%3E";
+        
+        const manifest = {
+            "name": "Spare Part List",
+            "short_name": "Spare Part List",
+            "start_url": window.location.href,
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#2563eb",
+            "icons": [{
+                "src": svgIcon,
+                "sizes": "512x512",
+                "type": "image/svg+xml",
+                "purpose": "any maskable"
+            }]
+        };
+        
+        const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+        document.getElementById('manifest-link').href = URL.createObjectURL(manifestBlob);
+
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', (e) => self.skipWaiting());
+                self.addEventListener('activate', (e) => self.clients.claim());
+                self.addEventListener('fetch', (e) => { });
+            `;
+            const swBlob = new Blob([swCode], {type: 'application/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(swBlob))
+                .then(() => console.log('PWA Service Worker พร้อมทำงาน'))
+                .catch(err => console.log('PWA SW Error:', err));
+        }
+
+        // ==========================================
+        // การตั้งค่า Google Sheets
+        // ==========================================
+        
+        let csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQOSNZKaFdRehYMImiL6ow6MoH45V701AanbB7sthTqbSlpHP_TPLImV2lHrh2xdZcKB_CH20gKG7-r/pub?output=csv';
+
+        let rawData = [];
+        let headers = [];
+        let rows = [];
+        let currentHeaderOrder = []; 
+        let currentDisplayedData = []; 
+
+        const searchInput1 = document.getElementById('searchInput1');
+        const searchInput2 = document.getElementById('searchInput2');
+        const statusContainer = document.getElementById('statusContainer');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorDetail = document.getElementById('errorDetail');
+        const tableWrapper = document.getElementById('tableWrapper');
+        const tableHead = document.getElementById('tableHead');
+        const tableBody = document.getElementById('tableBody');
+        const noResults = document.getElementById('noResults');
+        const rowCountEl = document.getElementById('rowCount');
+        const lastUpdatedEl = document.getElementById('lastUpdated');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        async function loadData() {
+            statusContainer.classList.remove('hidden');
+            statusContainer.style.display = '';
+            loadingIndicator.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            tableWrapper.classList.add('hidden');
+            searchInput1.disabled = true;
+            searchInput2.disabled = true;
+            errorDetail.textContent = '';
+
+            const encodedUrl = encodeURIComponent(csvUrl);
+            
+            const fetchSources = [
+                { name: 'Google Direct', url: csvUrl },
+                { name: 'Proxy 1 (AllOrigins)', url: 'https://api.allorigins.win/raw?url=' + encodedUrl },
+                { name: 'Proxy 2 (CorsProxy)', url: 'https://corsproxy.io/?' + encodedUrl },
+                { name: 'Proxy 3 (CodeTabs)', url: 'https://api.codetabs.com/v1/proxy?quest=' + encodedUrl }
+            ];
+
+            let csvText = '';
+            let fetchSuccess = false;
+            let lastErrorMsg = '';
+
+            for (const source of fetchSources) {
+                try {
+                    const response = await fetch(source.url);
+                    if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+                    
+                    const text = await response.text();
+                    
+                    if (text.trim().toLowerCase().startsWith('<!doctype html>') || text.trim().toLowerCase().startsWith('<html')) {
+                        throw new Error('ไม่สามารถเข้าถึงข้อมูล CSV ได้ (ได้รับข้อมูลเป็นหน้า HTML แทน)');
+                    }
+                    
+                    csvText = text;
+                    fetchSuccess = true;
+                    console.log(`✅ ดึงข้อมูลสำเร็จผ่าน: ${source.name}`);
+                    break;
+                } catch (err) {
+                    console.warn(`⚠️ ช่องทาง ${source.name} ถูกบล็อกหรือล้มเหลว:`, err);
+                    lastErrorMsg = err.message === 'Failed to fetch' ? 'โดนบล็อกการเชื่อมต่อเครือข่าย (Failed to fetch)' : err.message;
+                }
+            }
+
+            if (!fetchSuccess) {
+                showError(lastErrorMsg);
+                return;
+            }
+
+            try {
+                Papa.parse(csvText, {
+                    header: false,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        if (results.data && results.data.length > 0) {
+                            rawData = results.data;
+                            headers = rawData[0]; 
+                            rows = rawData.slice(1); 
+                            
+                            currentHeaderOrder = headers.map((_, i) => i); 
+                            
+                            renderHeaders(currentHeaderOrder);
+                            renderRows(rows, currentHeaderOrder);
+                            
+                            statusContainer.classList.add('hidden');
+                            tableWrapper.classList.remove('hidden');
+                            searchInput1.disabled = false;
+                            searchInput2.disabled = false;
+                            searchInput1.focus();
+                            
+                            rowCountEl.textContent = rows.length;
+                            const now = new Date();
+                            lastUpdatedEl.textContent = now.toLocaleTimeString('th-TH') + ' น.';
+                        } else {
+                            throw new Error('ไม่พบข้อมูลใดๆ ในไฟล์ Google Sheets');
+                        }
+                    },
+                    error: function(err) {
+                        throw new Error('เกิดข้อผิดพลาดในการอ่านรูปแบบไฟล์: ' + err.message);
+                    }
+                });
+
+            } catch (err) {
+                console.error("Parse Error:", err);
+                showError(err.message);
+            }
+        }
+
+        function showError(detailMessage) {
+            loadingIndicator.classList.add('hidden');
+            errorMessage.classList.remove('hidden');
+            if(detailMessage) {
+                errorDetail.textContent = 'รายละเอียด: ' + detailMessage;
+            }
+        }
+
+        function formatCellData(cellStr) {
+            if (!cellStr) return '<span class="cell-placeholder">-</span>';
+            const str = cellStr.toString().trim();
+
+            const driveRegex = /https:\/\/drive\.google\.com\/(?:file\/d\/|open\?id=)([-\w]+)/;
+            const driveMatch = str.match(driveRegex);
+            if (driveMatch) {
+                const fileId = driveMatch[1];
+                const imgUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                return `
+                    <div class="img-zoom-wrap">
+                        <img src="${imgUrl}" alt="รูปภาพ" loading="lazy" onerror="this.onerror=null; this.outerHTML='<a href=\\'${str}\\' target=\\'_blank\\' class=\\'table-link\\'>เปิดรูปลิงก์</a>';"/>
+                    </div>`;
+            }
+
+            const imageRegex = /^https?:\/\/.*\.(jpeg|jpg|gif|png|webp)(\?.*)?$/i;
+            if (imageRegex.test(str)) {
+                return `
+                    <div class="img-zoom-wrap">
+                        <img src="${str}" alt="รูปภาพ" loading="lazy" />
+                    </div>`;
+            }
+
+            const urlRegex = /^https?:\/\/[^\s]+$/i;
+            if (urlRegex.test(str)) {
+                return `<a href="${str}" target="_blank" class="table-link">เปิดลิงก์</a>`;
+            }
+
+            return str;
+        }
+
+        function renderHeaders(order) {
+            let theadHTML = '<tr>';
+            const hasSearch = searchInput1.value.trim() !== '' || searchInput2.value.trim() !== '';
+            
+            order.forEach((colIndex, i) => {
+                const header = headers[colIndex];
+                const highlightClass = (i === 0 && hasSearch) ? 'col-highlight' : '';
+                theadHTML += `<th class="${highlightClass}">${header || '-'}</th>`;
+            });
+            theadHTML += `<th class="col-sticky">คัดลอก</th>`;
+            theadHTML += '</tr>';
+            tableHead.innerHTML = theadHTML;
+        }
+
+        const listPager = createListPager(document.getElementById('tableWrapper'), () => renderRows(currentDisplayedData, currentHeaderOrder));
+        function renderRows(dataToRender, order) {
+            tableBody.innerHTML = '';
+            const pageRows = listPager.page(dataToRender);
+            currentDisplayedData = dataToRender;
+            
+            if (dataToRender.length === 0) {
+                tableBody.parentElement.classList.add('hidden');
+                noResults.classList.remove('hidden');
+                return;
+            } else {
+                tableBody.parentElement.classList.remove('hidden');
+                noResults.classList.add('hidden');
+            }
+
+            let tbodyHTML = '';
+            const hasSearch = searchInput1.value.trim() !== '' || searchInput2.value.trim() !== '';
+            
+            pageRows.forEach((row, pageIndex) => {
+                const rowIndex = listPager.offset + pageIndex;
+                tbodyHTML += '<tr>';
+                
+                order.forEach((colIndex, i) => {
+                    const cell = row[colIndex];
+                    const cellData = formatCellData(cell);
+                    
+                    let cellClass = '';
+                    if (i === 0 && hasSearch) {
+                        cellClass = 'cell-first-search';
+                    } else if (i === 0) {
+                        cellClass = 'cell-first';
+                    }
+
+                    tbodyHTML += `<td class="${cellClass}">${cellData}</td>`;
+                });
+
+                tbodyHTML += `
+                    <td class="col-sticky">
+                        <button type="button" class="copy-btn" data-row-index="${rowIndex}" title="ส่งออกเป็นข้อความ">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            
+            tableBody.innerHTML = tbodyHTML;
+        }
+
+        // ระบบดักจับการกดปุ่มคัดลอก และเปลี่ยนสีปุ่ม
+        tableBody.addEventListener('click', function(e) {
+            const btn = e.target.closest('.copy-btn');
+            if (btn) {
+                const rowIndex = btn.getAttribute('data-row-index');
+                const rowData = currentDisplayedData[rowIndex]; 
+                
+                let linesToCopy = [];
+                currentHeaderOrder.forEach(colIndex => {
+                    const headerName = headers[colIndex] || '-';
+                    const cellValue = rowData[colIndex] ? rowData[colIndex].trim() : '-';
+                    
+                    if (cellValue !== '-' && cellValue !== '') {
+                        // เพิ่มข้อมูลปกติลงในรายการ
+                        linesToCopy.push(`• ${headerName} : ${cellValue}`);
+                        
+                        // ฟังก์ชันพิเศษ: ตรวจสอบและคำนวณ VAT 7%
+                        // ถ้าชื่อคอลัมน์มีคำว่า 'ราคา' หรือ 'price' (ไม่สนใจตัวพิมพ์เล็ก/ใหญ่)
+                        if (headerName.toLowerCase().includes('ราคา') || headerName.toLowerCase().includes('price')) {
+                            
+                            // ตัดเอาเฉพาะตัวเลขและจุดทศนิยม เผื่อมีพิมพ์ว่า "500 บาท"
+                            const numericValue = parseFloat(cellValue.replace(/[^0-9.-]+/g,""));
+                            
+                            // ถ้าแปลงเป็นตัวเลขได้สำเร็จ ให้คำนวณและเพิ่มบรรทัด VAT 7%
+                            if (!isNaN(numericValue)) {
+                                const priceWithVat = numericValue * 1.07;
+                                // ปัดเศษให้เป็นจำนวนเต็ม และใส่ลูกน้ำ (Comma) โดยไม่มีทศนิยม
+                                const formattedVatPrice = Math.round(priceWithVat).toLocaleString('th-TH');
+                                
+                                linesToCopy.push(`• ราคารวม VAT 7% : ${formattedVatPrice}`);
+                            }
+                        }
+                    }
+                });
+
+                const textToCopy = linesToCopy.join('\n');
+
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                textArea.style.top = "-999999px";
+                document.body.appendChild(textArea);
+                
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        // เก็บโค้ดเดิมของปุ่มไว้
+                        const originalHTML = btn.innerHTML;
+                        const originalClasses = btn.className;
+                        
+                        // เปลี่ยนปุ่มเป็นสีเขียวและไอคอนเครื่องหมายถูก
+                        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`;
+                        btn.className = "copy-btn pointer-events-none";
+                        btn.style.background = "rgba(34,197,94,0.3)";
+                        btn.style.borderColor = "rgba(34,197,94,0.5)";
+                        btn.style.color = "#4ade80";
+                        
+                        // ตั้งเวลาให้กลับเป็นเหมือนเดิมใน 2 วินาที
+                        setTimeout(() => {
+                            btn.innerHTML = originalHTML;
+                            btn.className = originalClasses;
+                            btn.style.background = '';
+                            btn.style.borderColor = '';
+                            btn.style.color = '';
+                        }, 2000);
+
+                    } else {
+                        alert('ไม่สามารถคัดลอกได้ เบราว์เซอร์อาจบล็อกการทำงานนี้');
+                    }
+                } catch (err) {
+                    console.error('Copy failed:', err);
+                    alert('ไม่สามารถคัดลอกได้ เบราว์เซอร์ของคุณอาจไม่รองรับฟีเจอร์นี้');
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+            }
+        });
+
+        // ฟังก์ชันค้นหาข้อมูล (อัปเดตรองรับ 2 ช่อง)
+        function performSearch() {
+            listPager.reset();
+            const term1 = searchInput1.value.toLowerCase().trim();
+            const term2 = searchInput2.value.toLowerCase().trim();
+            
+            if (term1 === '' && term2 === '') {
+                currentHeaderOrder = headers.map((_, i) => i);
+                renderHeaders(currentHeaderOrder);
+                renderRows(rows, currentHeaderOrder);
+                rowCountEl.textContent = rows.length;
+                return;
+            }
+
+            let matchColIndex = -1; 
+            
+            const filteredRows = rows.filter(row => {
+                let match1 = term1 === ''; 
+                let match2 = term2 === '';
+                let tempCol1 = -1;
+                let tempCol2 = -1;
+
+                row.forEach((cell, index) => {
+                    if (cell) {
+                        const cellText = cell.toString().toLowerCase();
+                        if (term1 !== '' && cellText.includes(term1)) {
+                            match1 = true;
+                            if (tempCol1 === -1) tempCol1 = index;
+                        }
+                        if (term2 !== '' && cellText.includes(term2)) {
+                            match2 = true;
+                            if (tempCol2 === -1) tempCol2 = index;
+                        }
+                    }
+                });
+
+                // ถ้ารายการนี้มีครบทั้งคำที่ 1 และ 2 จะถูกแสดงขึ้นมา
+                if (match1 && match2) {
+                    if (matchColIndex === -1) {
+                        matchColIndex = (term1 !== '' && tempCol1 !== -1) ? tempCol1 : tempCol2;
+                    }
+                    return true;
+                }
+                return false;
+            });
+
+            if (matchColIndex !== -1) {
+                currentHeaderOrder = headers.map((_, i) => i);
+                currentHeaderOrder.splice(matchColIndex, 1);
+                currentHeaderOrder.unshift(matchColIndex);
+            } else {
+                currentHeaderOrder = headers.map((_, i) => i);
+            }
+
+            renderHeaders(currentHeaderOrder);
+            renderRows(filteredRows, currentHeaderOrder);
+            rowCountEl.textContent = filteredRows.length;
+        }
+
+        searchInput1.addEventListener('input', performSearch);
+        searchInput2.addEventListener('input', performSearch);
+
+        // ระบบลากเพื่อเลื่อนซ้ายขวา (Drag to scroll)
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        tableWrapper.addEventListener('mousedown', (e) => {
+            if(e.target.closest('button') || e.target.closest('a') || e.target.closest('img')) return;
+            
+            isDown = true;
+            tableWrapper.classList.add('no-select'); 
+            startX = e.pageX - tableWrapper.offsetLeft;
+            scrollLeft = tableWrapper.scrollLeft;
+        });
+
+        tableWrapper.addEventListener('mouseleave', () => {
+            isDown = false;
+            tableWrapper.classList.remove('no-select');
+        });
+
+        tableWrapper.addEventListener('mouseup', () => {
+            isDown = false;
+            tableWrapper.classList.remove('no-select');
+        });
+
+        tableWrapper.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - tableWrapper.offsetLeft;
+            const walk = (x - startX) * 1.5; 
+            tableWrapper.scrollLeft = scrollLeft - walk;
+        });
+
+        refreshBtn.addEventListener('click', function() {
+            searchInput1.value = ''; 
+            searchInput2.value = ''; 
+            loadData(); 
+        });
+
+        window.onload = loadData;
+
+    </script>
+</body>
+</html>

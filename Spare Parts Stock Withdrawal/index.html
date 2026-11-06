@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="th" class="unified-ui ui-stock">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#eef4fb">
+  <meta name="description" content="ระบบยืมและคืนอะไหล่จากสต็อก">
+  <title>PartFlow — ยืมและคืนอะไหล่</title>
+  <script src="../view-only.js"></script>
+  <script src="../unified-theme.js?v=2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="../unified-theme.css?v=6">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="เมนูหลัก">
+      <a class="brand" href="#dashboardPage" data-action="show-dashboard" aria-label="PartFlow หน้าหลัก">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span><strong>PartFlow</strong><small>SPARE PARTS</small></span>
+      </a>
+
+      <nav class="nav-list">
+        <button class="nav-item active" id="navDashboard" type="button" data-action="show-dashboard">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
+          <span>ภาพรวม</span>
+        </button>
+        <button class="nav-item" id="navNewTransaction" type="button" data-action="open-form">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          <span>ทำรายการใหม่</span>
+        </button>
+        <button class="nav-item" id="navBorrowed" type="button" data-action="show-borrowed">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 4h10v16H7zM9 8h6M9 12h6"/></svg>
+          <span>รายการที่ยืม</span><span class="nav-count" id="navBorrowCount">3</span>
+        </button>
+        <button class="nav-item" id="navHistory" type="button" data-action="show-history">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16v13H4zM8 4h8v3M8 11h8M8 15h5"/></svg>
+          <span>ประวัติทั้งหมด</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-note">
+        <span class="online-dot" id="connectionDot" aria-hidden="true"></span>
+        <div><strong id="connectionLabel">พร้อมใช้งาน</strong><small id="connectionDetail">โหมดตัวอย่าง UX/UI</small></div>
+      </div>
+    </aside>
+
+    <main class="main-content" id="dashboardPage">
+      <header class="topbar">
+        <button class="mobile-menu" type="button" aria-label="เปิดเมนู" aria-expanded="false">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="page-heading">
+          <p id="todayLabel">วันอังคารที่ 15 กันยายน 2569</p>
+          <h1>สต็อกอะไหล่</h1>
+        </div>
+        <div class="top-actions"><span class="avatar" role="img" aria-label="ผู้ใช้งาน LP">LP</span></div>
+      </header>
+
+      <section class="overview" aria-labelledby="overviewTitle">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow">ภาพรวมวันนี้</p>
+            <h2 id="overviewTitle">ติดตามอะไหล่ทุกชิ้นในที่เดียว</h2>
+          </div>
+          <button class="primary-button" type="button" data-action="open-form">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            ทำรายการใหม่
+          </button>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric-card metric-navy">
+            <div class="metric-icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16v13H4zM8 4h8v3M8 11h8"/></svg></div>
+            <div><span>รายการเดือนนี้</span><strong id="metricTotal">12</strong><small>รายการ</small></div>
+            <p id="metricTrend">กำลังคำนวณเทียบเดือนก่อน</p>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon icon-blue"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 8h12v12H6zM9 4h6v4M9 12h6M9 16h4"/></svg></div>
+            <div><span>กำลังยืม</span><strong id="metricBorrowed">3</strong><small>รายการ</small></div>
+            <p>รอการส่งคืน</p>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon icon-orange"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg></div>
+            <div><span>ต้องติดตามการคืน</span><strong id="metricDue">1</strong><small>รายการ</small></div>
+            <p id="metricDueDetail">เกินกำหนด 0 · ภายใน 3 วัน 0</p>
+          </article>
+          <article class="metric-card">
+            <div class="metric-icon icon-green"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></div>
+            <div><span>คืนแล้ว</span><strong id="metricReturned">8</strong><small>รายการ</small></div>
+            <p>ในเดือนนี้</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="workspace" aria-labelledby="recordsTitle">
+        <div class="workspace-header">
+          <div>
+            <p class="eyebrow">ความเคลื่อนไหว</p>
+            <h2 id="recordsTitle">รายการล่าสุด</h2>
+          </div>
+          <div class="history-actions"><button class="secondary-button" type="button" data-action="refresh-data">รีเฟรชข้อมูล</button><span class="recent-label">4 รายการล่าสุด</span></div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>วันที่ทำรายการ</th><th>เลขงาน</th><th>ชื่ออะไหล่</th><th>นำมาจาก</th><th>จำนวน</th><th>สถานะ</th><th><span class="sr-only">การทำงาน</span></th></tr></thead>
+            <tbody id="recordsBody"></tbody>
+          </table>
+          <div class="empty-state" id="emptyState" hidden>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+            <strong>ยังไม่มีรายการ</strong>
+            <span>รายการใหม่จะแสดงในส่วนนี้</span>
+          </div>
+        </div>
+        <div class="table-footer"><span id="recordCount">แสดง 4 รายการล่าสุด</span><button type="button" data-action="show-history">ดูประวัติทั้งหมด <span>→</span></button></div>
+      </section>
+    </main>
+
+  <main class="main-content history-page" id="historyPage" hidden>
+    <header class="topbar">
+      <button class="mobile-menu" type="button" aria-label="เปิดเมนู" aria-expanded="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="page-heading"><h1>ประวัติทั้งหมด</h1></div>
+      <div class="top-actions">
+        <label class="search-box">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+          <span class="sr-only">ค้นหารายการ</span>
+          <input id="globalSearch" type="search" placeholder="ค้นหาเลขงาน ชื่อผู้เบิก หรือชื่ออะไหล่">
+          <kbd>⌘ K</kbd>
+        </label>
+        <span class="avatar" role="img" aria-label="ผู้ใช้งาน LP">LP</span>
+      </div>
+    </header>
+
+    <section class="history-content" aria-labelledby="historyRecordsTitle">
+      <div class="history-intro">
+        <div><p class="eyebrow">ทะเบียนรายการ</p><h2 id="historyRecordsTitle">ประวัติการยืมและคืนอะไหล่</h2></div>
+        <div class="history-actions">
+          <button class="secondary-button" type="button" data-action="refresh-data">รีเฟรชข้อมูล</button>
+          <button class="secondary-button export-button" type="button" data-action="export-data">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg>
+            ส่งออก CSV
+          </button>
+          <button class="primary-button" type="button" data-action="open-form">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            ทำรายการใหม่
+          </button>
+        </div>
+      </div>
+
+      <section class="workspace history-workspace" aria-label="รายการประวัติ">
+        <div class="workspace-header">
+          <div><p class="eyebrow">ตัวกรอง</p><h2>เลือกรายการที่ต้องการดู</h2></div>
+          <div class="filter-tabs" role="tablist" aria-label="กรองสถานะ">
+            <button class="filter-tab active" type="button" role="tab" aria-selected="true" data-filter="all">ทั้งหมด</button>
+            <button class="filter-tab" type="button" role="tab" aria-selected="false" data-filter="borrowed">กำลังยืม</button>
+            <button class="filter-tab" type="button" role="tab" aria-selected="false" data-filter="due">ต้องติดตาม</button>
+            <button class="filter-tab" type="button" role="tab" aria-selected="false" data-filter="returned">คืนแล้ว</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>วันที่ทำรายการ</th><th>เลขงาน</th><th>ชื่ออะไหล่</th><th>นำมาจาก</th><th>จำนวน</th><th>สถานะ</th><th><span class="sr-only">การทำงาน</span></th></tr></thead>
+            <tbody id="historyRecordsBody"></tbody>
+          </table>
+          <div class="empty-state" id="historyEmptyState" hidden>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+            <strong>ไม่พบรายการที่ค้นหา</strong>
+            <span>ลองเปลี่ยนคำค้นหาหรือตัวกรอง</span>
+          </div>
+        </div>
+        <div class="table-footer"><span id="historyRecordCount">แสดง 0 รายการ</span><button type="button" data-action="show-dashboard">กลับไปภาพรวม <span>→</span></button></div>
+      </section>
+    </section>
+  </main>
+
+  <main class="main-content transaction-page" id="transactionPage" hidden>
+    <header class="topbar">
+      <button class="mobile-menu" type="button" aria-label="เปิดเมนู" aria-expanded="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="page-heading"><h1>ทำรายการใหม่</h1></div>
+      <button class="secondary-button compact-back" type="button" data-action="close-form">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg><span>กลับหน้าหลัก</span>
+      </button>
+    </header>
+    <div class="transaction-layout">
+      <section class="transaction-card" aria-labelledby="transactionTitle">
+        <div class="transaction-card-header">
+          <span class="transaction-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 8h14v12H5zM9 4h6v4M9 13h6"/></svg></span>
+          <div><p class="eyebrow">บันทึกการเคลื่อนไหว</p><h2 id="transactionTitle">ยืมอะไหล่จากสต็อก</h2></div>
+        </div>
+        <form id="borrowForm">
+      <div class="form-grid">
+        <label><span>วันที่ยืม <em>*</em></span><input id="borrowDate" name="borrowDate" type="date" required></label>
+        <label id="returnDateField"><span>วันที่กำหนดคืน <em>*</em></span><input id="returnDate" name="returnDate" type="date" required><small>ต้องเป็นวันเดียวกับหรือหลังวันที่ยืม</small></label>
+        <label class="full"><span>เลขงาน <em>*</em></span><input name="jobNumber" maxlength="120" type="text" placeholder="เช่น WO-2569-0148" autocomplete="off" required></label>
+        <label class="full"><span>ชื่อลูกค้า <small>(ไม่บังคับ)</small></span><input name="customerName" maxlength="250" type="text" placeholder="กรอกชื่อบริษัท โรงพยาบาล หรือชื่อลูกค้า" autocomplete="organization"></label>
+        <label class="full"><span>ชื่อผู้เบิก <em>*</em></span><select id="requesterName" name="requesterName" required><option value="">เลือกชื่อผู้เบิก</option></select></label>
+        <label class="full" id="otherRequesterField" hidden><span>ระบุชื่อผู้เบิก <em>*</em></span><input name="otherRequesterName" maxlength="200" type="text" placeholder="ชื่อและนามสกุลผู้เบิก" autocomplete="name"></label>
+        <label class="full"><span>นำมาจาก <em>*</em></span><select id="destination" name="destination" required><option value="เครื่อง Demo">เครื่อง Demo</option><option value="เครื่องใหม่">เครื่องใหม่</option><option value="เครื่องลูกค้า">เครื่องลูกค้า</option><option value="อะไหล่ใหม่">อะไหล่ใหม่</option><option value="อื่นๆ">อื่นๆ</option></select></label>
+        <label class="full" id="otherDestinationField" hidden><span>ระบุแหล่งที่มา <em>*</em></span><input name="otherDestination" maxlength="250" type="text" placeholder="ระบุว่าอะไหล่นำมาจากที่ใด"></label>
+        <label class="full"><span>หมายเลขเครื่อง (Serial Number) <small>(ไม่บังคับ)</small></span><input name="sourceSerialNumber" maxlength="250" type="text" placeholder="หมายเลขเครื่องหรือแหล่งที่นำมาจาก" autocomplete="off"><small class="field-help">ใช้เชื่อมโยงกับข้อมูลในช่อง “นำมาจาก”</small></label>
+        <section class="parts-section full" aria-labelledby="partsTitle">
+          <div class="parts-section-header">
+            <div><span class="field-title" id="partsTitle">รายละเอียดอะไหล่ <em>*</em></span><small>เมื่อเพิ่มจำนวน ระบบจะเพิ่มช่องชื่ออะไหล่ให้โดยอัตโนมัติ</small></div>
+          </div>
+          <div class="borrow-items-controls">
+            <label><span>จำนวน <em>*</em></span><div class="quantity-control"><button type="button" data-quantity="minus" aria-label="ลดจำนวน">−</button><input id="quantity" name="quantity" type="number" min="1" max="50" value="1" required><button type="button" data-quantity="plus" aria-label="เพิ่มจำนวน">+</button></div></label>
+            <label><span>หน่วย</span><select id="unit" name="unit"><option>ชิ้น</option><option>ชุด</option><option>กล่อง</option></select></label>
+          </div>
+          <div class="part-name-list" id="partNameList"></div>
+        </section>
+        <label class="full"><span>หมายเหตุ <small>(ไม่บังคับ)</small></span><textarea name="note" maxlength="2000" rows="3" placeholder="เช่น อาการเสีย ตำแหน่งที่เปลี่ยน หรือผู้รับผิดชอบ"></textarea></label>
+      </div>
+
+      <div class="form-notice"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span id="storageNotice">กำลังตรวจสอบการเชื่อมต่อฐานข้อมูล</span></div>
+      <div class="drawer-actions"><button class="secondary-button" type="button" data-action="close-form">ยกเลิก</button><button class="primary-button" type="submit">บันทึกรายการ</button></div>
+        </form>
+      </section>
+    </div>
+  </main>
+  </div>
+
+  <div class="modal-backdrop" id="returnModal" hidden>
+    <section class="return-modal" role="dialog" aria-modal="true" aria-labelledby="returnTitle">
+      <div class="success-symbol"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></div>
+      <h2 id="returnTitle">ยืนยันการคืนอะไหล่</h2>
+      <p id="returnDescription">ตรวจสอบรายการก่อนยืนยันการรับคืน</p>
+      <label><span>วันที่คืนจริง <em>*</em></span><input id="actualReturnDate" type="date" required></label>
+      <div class="modal-actions"><button class="secondary-button" type="button" data-action="cancel-return">ยกเลิก</button><button class="primary-button" type="button" data-action="confirm-return">ยืนยันการคืน</button></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"><span class="toast-icon">✓</span><div><strong>บันทึกรายการแล้ว</strong><p>เพิ่มรายการลงในประวัติเรียบร้อย</p></div></div>
+  <script src="config.js?v=1"></script>
+  <script src="../list-pagination.js?v=1"></script>
+  <script src="app.js?v=19"></script>
+</body>
+</html>

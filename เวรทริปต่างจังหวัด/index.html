@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="th" class="unified-ui ui-trip">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบบันทึกเวรทริปต่างจังหวัด | Laser Engineer</title>
+<script src="../view-only.js"></script>
+<script src="../unified-theme.js?v=2"></script>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="ระบบบันทึกการเดินทางต่างจังหวัดและจัดตารางเวรหมุนเวียนคิวพนักงานอัตโนมัติ สำหรับทีม Laser Engineer">
+  <meta name="author" content="Laser Engineer">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Design Tokens & Theme Setup */
+    :root {
+      --font-family: 'Outfit', 'Noto Sans Thai', sans-serif;
+      --glass-bg: rgba(17, 24, 39, 0.45);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-highlight: rgba(255, 255, 255, 0.05);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #3b82f6;
+      --primary-glow: rgba(59, 130, 246, 0.4);
+      --accent-red: #ef4444;
+      --accent-yellow: #eab308;
+      --accent-green: #10b981;
+      --card-radius: 24px;
+      --transition-speed: 0.3s;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: #0b0f19;
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      padding-bottom: 50px;
+    }
+
+    /* Animated Color Background */
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      background: radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 1) 0%, rgba(9, 11, 20, 1) 90%);
+      overflow: hidden;
+    }
+
+    .blob {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.35;
+      mix-blend-mode: screen;
+      animation: floatBlob 25s infinite alternate ease-in-out;
+      z-index: -1;
+    }
+
+    .blob-red {
+      background: radial-gradient(circle, rgba(239, 68, 68, 0.8) 0%, rgba(239, 68, 68, 0) 70%);
+      top: -10%;
+      left: -10%;
+      animation-delay: 0s;
+    }
+
+    .blob-blue {
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.8) 0%, rgba(59, 130, 246, 0) 70%);
+      bottom: -10%;
+      right: -10%;
+      animation-delay: 6s;
+    }
+
+    .blob-yellow {
+      background: radial-gradient(circle, rgba(234, 179, 8, 0.7) 0%, rgba(234, 179, 8, 0) 70%);
+      top: 40%;
+      left: 30%;
+      animation-delay: 12s;
+    }
+
+    @keyframes floatBlob {
+      0% {
+        transform: translate(0, 0) scale(1) rotate(0deg);
+      }
+      33% {
+        transform: translate(100px, -80px) scale(1.15) rotate(120deg);
+      }
+      66% {
+        transform: translate(-80px, 120px) scale(0.9) rotate(240deg);
+      }
+      100% {
+        transform: translate(0, 0) scale(1) rotate(360deg);
+      }
+    }
+
+    /* Layout Container */
+    .container {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Glassmorphism Styles */
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--card-radius);
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3);
+      padding: 30px;
+      margin-bottom: 24px;
+      transition: transform var(--transition-speed), box-shadow var(--transition-speed), border var(--transition-speed);
+    }
+
+    .glass-panel:hover {
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 16px 50px 0 rgba(0, 0, 0, 0.4);
+    }
+
+    /* Typography Utilities */
+    h1, h2, h3, h4 {
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .title-gradient {
+      background: linear-gradient(135deg, #ef4444 0%, #3b82f6 50%, #eab308 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Header Component */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      background: linear-gradient(135deg, #ef4444, #3b82f6);
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+    }
+
+    .logo-icon i {
+      color: white;
+      font-size: 24px;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .status-badge:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.active {
+      background: var(--accent-green);
+      box-shadow: 0 0 12px var(--accent-green);
+    }
+
+    .status-dot.warning {
+      background: var(--accent-yellow);
+      box-shadow: 0 0 12px var(--accent-yellow);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 16px;
+      font-family: var(--font-family);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-speed);
+      border: 1px solid transparent;
+      outline: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ef4444 0%, #3b82f6 100%);
+      color: white;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 25px rgba(59, 130, 246, 0.4);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-icon-only {
+      padding: 8px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .btn-icon-only:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1.8fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Form Fields Styling */
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 14px 16px 14px 44px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      color: var(--text-main);
+      font-family: var(--font-family);
+      font-size: 15px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .form-select option {
+      background: #111827; /* Dark background for dropdown menu options */
+      color: #ffffff;      /* White text for visibility */
+    }
+
+    .form-textarea {
+      padding-left: 16px;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 40px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* Option/Region Chips */
+    .regions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 480px) {
+      .regions-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .chip-option {
+      position: relative;
+    }
+
+    .chip-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .chip-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .chip-label:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .chip-option input[type="radio"]:checked + .chip-label {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(59, 130, 246, 0.15));
+      border-color: var(--primary);
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+    }
+
+    .other-input-container {
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* Switch Component */
+    .switch-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 15px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.15);
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background: linear-gradient(135deg, #ef4444, #3b82f6);
+    }
+
+    input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
+    .switch-label-text {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .switch-subtext {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Employee Queue List (Active Duty Design) */
+    .queue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Custom Scrollbar for Glassmorphism */
+    .queue-list::-webkit-scrollbar, .table-container::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .queue-list::-webkit-scrollbar-track, .table-container::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 10px;
+    }
+    .queue-list::-webkit-scrollbar-thumb, .table-container::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+    .queue-list::-webkit-scrollbar-thumb:hover, .table-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .queue-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 18px;
+      transition: all 0.2s;
+    }
+
+    .queue-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .queue-item.next-up {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(59, 130, 246, 0.18) 100%);
+      border: 2px solid rgba(59, 130, 246, 0.45);
+      box-shadow: 0 0 25px rgba(59, 130, 246, 0.25), 0 4px 15px rgba(239, 68, 68, 0.1);
+      position: relative;
+      overflow: hidden;
+      padding: 18px 20px 18px 24px;
+      margin-bottom: 6px;
+    }
+
+    .queue-item.next-up::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background: linear-gradient(to bottom, #ef4444, #3b82f6);
+    }
+
+    .queue-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .queue-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .next-up .queue-badge {
+      background: linear-gradient(135deg, #ef4444, #3b82f6);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      width: 44px;
+      height: 44px;
+      font-size: 18px;
+      animation: pulseGlow 2.5s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+      50% { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.7), 0 0 30px rgba(239, 68, 68, 0.3); }
+      100% { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+    }
+
+    .next-up .queue-name {
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fca5a5, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .queue-name {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .queue-tag {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 50px;
+      font-weight: 700;
+      margin-left: 8px;
+      display: inline-block;
+    }
+
+    .queue-tag.tag-next {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(59, 130, 246, 0.25));
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      font-size: 12px;
+      padding: 4px 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .queue-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* KPI Cards */
+    .kpi-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .kpi-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kpi-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .kpi-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .kpi-icon.blue { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .kpi-icon.red { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .kpi-icon.yellow { background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.3); }
+
+    .kpi-title {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .kpi-value {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    /* Charts Section */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+      min-height: 280px;
+    }
+
+    .chart-container {
+      background: rgba(255, 255, 255, 0.015);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 20px;
+      padding: 16px;
+      position: relative;
+      height: 250px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-canvas-wrapper {
+      position: relative;
+      flex-grow: 1;
+      height: calc(100% - 30px);
+    }
+
+    /* Logs/Table styling */
+    .panel-header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .search-box-wrapper {
+      position: relative;
+      flex-grow: 1;
+      max-width: 400px;
+    }
+
+    .search-box-wrapper input {
+      padding-left: 40px;
+    }
+
+    .search-box-wrapper i {
+      position: absolute;
+      left: 14px;
+      top: 15px;
+      color: var(--text-muted);
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 14px 16px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .region-tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+
+    .region-north { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3); }
+    .region-south { background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border-color: rgba(16, 185, 129, 0.3); }
+    .region-east { background: rgba(245, 158, 11, 0.15); color: #fde047; border-color: rgba(245, 158, 11, 0.3); }
+    .region-west { background: rgba(139, 92, 246, 0.15); color: #ddd6fe; border-color: rgba(139, 92, 246, 0.3); }
+    .region-northeast { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(239, 68, 68, 0.3); }
+    .region-other { background: rgba(255, 255, 255, 0.1); color: var(--text-main); border-color: rgba(255, 255, 255, 0.2); }
+
+    .no-data {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Modal / Config Popups */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 600px;
+      margin: 16px;
+      transform: scale(0.9);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 20px;
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+      color: white;
+    }
+
+    .setup-instructions {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 15px;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .code-block {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 10px;
+      border-radius: 8px;
+      font-family: monospace;
+      color: #3b82f6;
+      margin-top: 6px;
+      display: block;
+      word-break: break-all;
+    }
+
+    /* SweetAlert2 Styling Customization */
+    .swal2-popup {
+      background: rgba(17, 24, 39, 0.95) !important;
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 24px !important;
+      color: var(--text-main) !important;
+    }
+
+    .swal2-title, .swal2-html-container {
+      color: var(--text-main) !important;
+      font-family: var(--font-family) !important;
+    }
+
+    .swal2-confirm {
+      background: linear-gradient(135deg, #ef4444 0%, #3b82f6 100%) !important;
+      border-radius: 12px !important;
+      font-family: var(--font-family) !important;
+      font-weight: 600 !important;
+    }
+
+    .swal2-cancel {
+      background: rgba(255, 255, 255, 0.1) !important;
+      border-radius: 12px !important;
+      font-family: var(--font-family) !important;
+      color: var(--text-main) !important;
+    }
+
+    /* Hover and Active Micro-Animations */
+    .pulse-animation {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="../unified-theme.css?v=6">
+</head>
+<body>
+
+  <!-- Background animations -->
+  <div class="bg-animation">
+    <div class="blob blob-red"></div>
+    <div class="blob blob-blue"></div>
+    <div class="blob blob-yellow"></div>
+  </div>
+
+  <div class="container">
+    
+    <!-- Top Header -->
+    <header>
+      <div class="logo-area">
+        <div class="logo-icon">
+          <i data-lucide="calendar-range"></i>
+        </div>
+        <div>
+          <h1 style="font-size: 24px; line-height: 1.2;">บันทึกเวรต่างจังหวัด</h1>
+        </div>
+      </div>
+      
+      <div class="header-controls">
+        <div class="status-badge" id="api-status-badge" style="cursor: default; margin-right: 10px;">
+          <span class="status-dot active" id="api-status-dot"></span>
+          <span id="api-status-text">เชื่อมต่อ Google Sheets</span>
+        </div>
+        <a href="admin.html" class="btn btn-primary" style="padding: 10px 18px; font-size: 14px; border-radius: 12px;">
+          <i data-lucide="lock" style="width: 14px; height: 14px;"></i> จัดการหลังบ้าน (Admin)
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <div class="dashboard-grid">
+      
+      <!-- Left Column: Form & Queue Status -->
+      <div class="sidebar-wrapper">
+        
+        <!-- Queue Status Card -->
+        <div class="glass-panel">
+          <div class="queue-header">
+            <h2 style="font-size: 18px; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="users" style="color: #3b82f6;"></i> ลำดับคิวพนักงาน
+            </h2>
+          </div>
+          
+          <div class="queue-list" id="queue-list-container">
+            <!-- Dynamic Queue Items will be injected here -->
+            <div class="no-data">กำลังโหลดข้อมูลคิว...</div>
+          </div>
+        </div>
+
+
+
+      </div>
+
+      <!-- Right Column: Analytics & Logs -->
+      <div class="content-wrapper">
+        
+        <!-- Dashboard Statistics -->
+        <div class="glass-panel" style="padding: 24px;">
+          <h2 style="font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="bar-chart-3" style="color: #eab308;"></i> สถิติและการวิเคราะห์สะสม
+          </h2>
+          
+          <!-- KPI -->
+          <div class="kpi-container">
+            <div class="kpi-card">
+              <div class="kpi-icon blue">
+                <i data-lucide="plane-takeoff"></i>
+              </div>
+              <div>
+                <div class="kpi-title">ออกทริปสะสม</div>
+                <div class="kpi-value" id="kpi-total-trips">0 ครั้ง</div>
+              </div>
+            </div>
+            
+            <div class="kpi-card">
+              <div class="kpi-icon red">
+                <i data-lucide="award"></i>
+              </div>
+              <div>
+                <div class="kpi-title">เดินทางบ่อยที่สุด</div>
+                <div class="kpi-value" id="kpi-top-employee" style="font-size: 15px; font-weight: 700; white-space: normal; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">-</div>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon yellow">
+                <i data-lucide="map"></i>
+              </div>
+              <div>
+                <div class="kpi-title">จุดหมายยอดนิยม</div>
+                <div class="kpi-value" id="kpi-top-region">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="charts-grid">
+            <div class="chart-container">
+              <div class="chart-title">
+                <i data-lucide="pie-chart" style="width: 16px; height: 16px; color: #ef4444;"></i>
+                สัดส่วนภูมิภาคที่เดินทาง (%)
+              </div>
+              <div class="chart-canvas-wrapper">
+                <canvas id="regionChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trip History Logs Table -->
+        <div class="glass-panel">
+          <div class="panel-header-actions">
+            <h2 style="font-size: 18px; display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="history" style="color: #3b82f6;"></i> ประวัติการออกเวรต่างจังหวัด
+            </h2>
+            
+            <div class="search-box-wrapper">
+              <input type="text" id="searchInput" class="form-input" placeholder="ค้นหาตามชื่อพนักงาน หรือรายละเอียด..." oninput="filterTripsTable()">
+              <span class="input-icon" style="top: 15px;"><i data-lucide="search" style="width: 16px; height: 16px;"></i></span>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table id="trips-table">
+              <thead>
+                <tr>
+                  <th>วันที่ไป - วันที่กลับ</th>
+                  <th>ระยะเวลา</th>
+                  <th>พนักงาน</th>
+                  <th>ภูมิภาค / รายละเอียดงาน</th>
+                </tr>
+              </thead>
+              <tbody id="trips-table-body">
+                <tr>
+                  <td colspan="4" class="no-data">กำลังโหลดข้อมูลประวัติ...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <script src="../list-pagination.js?v=1"></script>
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Default Employee List (Defined by User Request)
+    const DEFAULT_EMPLOYEES = [
+      "กษิเดช",
+      "กันต์ศักดิ์",
+      "ชาติชาย",
+      "ณัฐพงษ์",
+      "ธนบูรณ์",
+      "ประวิทย์",
+      "พงษ์ศักดิ์",
+      "สมชาย",
+      "อภิลักษณ์",
+      "เอกเลิศ"
+    ];
+
+    // Core States
+    let appConfig = {
+      sheetsUrl: 'https://script.google.com/macros/s/AKfycbxsfBvUoPg-EzTdajj-JW4UvAxOiqYT_ne0jIwHw6EcJ3Ngtr5PRA-t3TMxNFDEN98UrA/exec'
+    };
+    
+    let state = {
+      queue: [],
+      trips: []
+    };
+
+    // Chart.js Instances
+    let regionChartInstance = null;
+
+    // Load Application Data
+    window.addEventListener('DOMContentLoaded', () => {
+      // Initialize UI based on connection url
+      updateApiStatusBadge();
+      loadData();
+    });
+
+
+
+    function updateApiStatusBadge() {
+      const badge = document.getElementById('api-status-badge');
+      const dot = document.getElementById('api-status-dot');
+      const text = document.getElementById('api-status-text');
+      
+      if (appConfig.sheetsUrl) {
+        dot.className = 'status-dot active';
+        text.innerText = 'เชื่อมต่อ Google Sheets';
+        badge.classList.add('pulse-animation');
+      } else {
+        dot.className = 'status-dot warning';
+        text.innerText = 'โหมดจำลอง (Mock Mode)';
+        badge.classList.remove('pulse-animation');
+      }
+    }
+
+    // API & Data Handler Operations
+    async function loadData() {
+      showLoading(true);
+      
+      if (appConfig.sheetsUrl) {
+        // Live Mode: Fetch from Google Sheets Apps Script API
+        try {
+          const response = await fetch(appConfig.sheetsUrl);
+          const result = await response.json();
+          
+          if (result.success) {
+            state.queue = result.queue;
+            state.trips = result.trips;
+            
+            // Format dates from Apps Script
+            state.trips = state.trips.map(trip => {
+              return {
+                ...trip,
+                startDate: formatDateString(trip.startDate),
+                endDate: formatDateString(trip.endDate)
+              };
+            });
+
+            // If empty queue on server (unexpected), initialize
+            if (state.queue.length === 0) {
+              await initializeSheetQueue(DEFAULT_EMPLOYEES);
+            }
+          } else {
+            throw new Error(result.error || "เกิดข้อผิดพลาดจากเซิร์ฟเวอร์");
+          }
+        } catch (error) {
+          console.error("Sheets API Error, switching to mock: ", error);
+          Swal.fire({
+            icon: 'warning',
+            title: 'ไม่สามารถดึงข้อมูลจาก Sheets ได้',
+            text: 'ระบบขอย้อนกลับไปใช้โหมดจำลองเนื่องจาก: ' + error.message,
+            confirmButtonText: 'ตกลง'
+          });
+          loadMockData();
+        }
+      } else {
+        // Mock Mode: Fetch from LocalStorage
+        loadMockData();
+      }
+      
+      renderQueue();
+      renderTripsTable();
+      updateDashboardStats();
+      showLoading(false);
+    }
+
+    function loadMockData() {
+      const mockQueue = localStorage.getItem('mockQueue');
+      const mockTrips = localStorage.getItem('mockTrips');
+
+      if (mockQueue) {
+        state.queue = JSON.parse(mockQueue);
+      } else {
+        state.queue = [...DEFAULT_EMPLOYEES];
+        localStorage.setItem('mockQueue', JSON.stringify(state.queue));
+      }
+
+      if (mockTrips) {
+        state.trips = JSON.parse(mockTrips);
+      } else {
+        state.trips = [];
+        localStorage.setItem('mockTrips', JSON.stringify(state.trips));
+      }
+    }
+
+    // Helper to parse dates locally to avoid timezone shifts
+    function parseLocalDate(dateVal) {
+      if (!dateVal) return null;
+      if (dateVal instanceof Date) return dateVal;
+      
+      // If it contains T, it's an ISO timestamp
+      if (typeof dateVal === 'string' && dateVal.includes('T')) {
+        return new Date(dateVal);
+      }
+      
+      // If it's a YYYY-MM-DD string
+      const dateParts = dateVal.toString().substring(0, 10).split('-');
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1;
+        const day = parseInt(dateParts[2], 10);
+        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+          return new Date(year, month, day);
+        }
+      }
+      
+      const d = new Date(dateVal);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // Format dates received in different styles to standard YYYY-MM-DD
+    function formatDateString(dateVal) {
+      if (!dateVal) return '';
+      const date = parseLocalDate(dateVal);
+      if (date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      return dateVal.toString().substring(0, 10);
+    }
+
+    function showLoading(isLoading) {
+      const queueContainer = document.getElementById('queue-list-container');
+      const tableBody = document.getElementById('trips-table-body');
+      
+      if (isLoading) {
+        if (state.queue.length === 0) {
+          queueContainer.innerHTML = `<div class="no-data"><i class="pulse-animation" data-lucide="loader" style="width: 24px; height: 24px; margin-bottom: 10px;"></i><br>กำลังโหลดคิวพนักงาน...</div>`;
+          lucide.createIcons();
+        }
+      }
+    }
+
+    // Render Employee Select Options
+    // Render Queue in Sidebar (Read-Only)
+    function renderQueue() {
+      const container = document.getElementById('queue-list-container');
+      container.innerHTML = '';
+
+      if (state.queue.length === 0) {
+        container.innerHTML = `<div class="no-data">ไม่พบรายชื่อพนักงาน</div>`;
+        return;
+      }
+
+      state.queue.forEach((name, index) => {
+        const isNext = index === 0;
+        
+        const item = document.createElement('div');
+        item.className = `queue-item ${isNext ? 'next-up' : ''}`;
+        
+        item.innerHTML = `
+          <div class="queue-info">
+            <div class="queue-badge">${index + 1}</div>
+            <div>
+              <span class="queue-name">${name}</span>
+              ${isNext ? '<span class="queue-tag tag-next">คิวปฏิบัติงาน</span>' : ''}
+            </div>
+          </div>
+        `;
+        
+        container.appendChild(item);
+      });
+    }
+
+
+
+    // Render Table Logs
+    const listPager = createListPager(document.querySelector('#trips-table').closest('.table-container'), renderTripsTable);
+    function renderTripsTable() {
+      const tbody = document.getElementById('trips-table-body');
+      tbody.innerHTML = '';
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const filteredTrips = state.trips.filter(trip => [trip.employeeName, trip.details, trip.startDate, trip.endDate].some(value => String(value || '').toLowerCase().includes(query)));
+      const pageTrips = listPager.page(filteredTrips);
+
+      if (filteredTrips.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="no-data">${state.trips.length ? 'ไม่พบรายการที่ค้นหา' : 'ยังไม่มีประวัติการเดินทางบันทึกในระบบ'}</td></tr>`;
+        return;
+      }
+
+      pageTrips.forEach(trip => {
+        const start = parseLocalDate(trip.startDate);
+        const end = parseLocalDate(trip.endDate);
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // inclusive
+
+        // Format dates to beautiful Thai readable strings
+        const formattedDate = formatThaiDateRange(trip.startDate, trip.endDate);
+        const regionClass = getRegionClass(trip.details);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${formattedDate}</td>
+          <td style="font-weight: 600;">${diffDays} วัน</td>
+          <td style="font-weight: 600; color: #93c5fd;">${trip.employeeName}</td>
+          <td>
+            <span class="region-tag ${regionClass}">${trip.details}</span>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function filterTripsTable() {
+      listPager.reset();
+      renderTripsTable();
+    }
+
+    // Helper functions for table formatters
+    function getRegionClass(details) {
+      if (details.includes('ภาคเหนือ')) return 'region-north';
+      if (details.includes('ภาคใต้')) return 'region-south';
+      if (details.includes('ภาคตะวันออก')) return 'region-east';
+      if (details.includes('ภาคตะวันตก')) return 'region-west';
+      if (details.includes('ภาคอีสาน')) return 'region-northeast';
+      return 'region-other';
+    }
+
+    function formatThaiDateRange(startStr, endStr) {
+      const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+      const start = parseLocalDate(startStr);
+      const end = parseLocalDate(endStr);
+      
+      if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return `${startStr} - ${endStr}`;
+      }
+
+      const startDay = start.getDate();
+      const startMonth = months[start.getMonth()];
+      const startYear = start.getFullYear() + 543; // Buddhist Era
+
+      const endDay = end.getDate();
+      const endMonth = months[end.getMonth()];
+      const endYear = end.getFullYear() + 543;
+
+      if (startYear === endYear) {
+        if (start.getMonth() === end.getMonth()) {
+          if (startDay === endDay) {
+            return `${startDay} ${startMonth} ${startYear.toString().substring(2)}`;
+          }
+          return `${startDay} - ${endDay} ${startMonth} ${startYear.toString().substring(2)}`;
+        }
+        return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${startYear.toString().substring(2)}`;
+      }
+      return `${startDay} ${startMonth} ${startYear.toString().substring(2)} - ${endDay} ${endMonth} ${endYear.toString().substring(2)}`;
+    }
+
+    // Analytics: Statistics Calculator & Chart Updater
+    function updateDashboardStats() {
+      const totalTrips = state.trips.length;
+      document.getElementById('kpi-total-trips').innerText = `${totalTrips} ครั้ง`;
+
+      // Calculator metrics
+      const employeeCounts = {};
+      const regionCounts = {};
+      
+      // Initialize zero count for all defaults
+      DEFAULT_EMPLOYEES.forEach(name => {
+        employeeCounts[name] = 0;
+      });
+
+      state.trips.forEach(trip => {
+        const emp = trip.employeeName;
+        const region = trip.details;
+        
+        employeeCounts[emp] = (employeeCounts[emp] || 0) + 1;
+        
+        // Group region name simple mapping
+        let groupedRegion = 'อื่นๆ';
+        if (region.includes('ภาคเหนือ')) groupedRegion = 'ภาคเหนือ';
+        else if (region.includes('ภาคใต้')) groupedRegion = 'ภาคใต้';
+        else if (region.includes('ภาคอีสาน')) groupedRegion = 'ภาคอีสาน';
+        else if (region.includes('ภาคตะวันออก')) groupedRegion = 'ภาคตะวันออก';
+        else if (region.includes('ภาคตะวันตก')) groupedRegion = 'ภาคตะวันตก';
+        else groupedRegion = region; // use exact detail if specific
+
+        regionCounts[groupedRegion] = (regionCounts[groupedRegion] || 0) + 1;
+      });
+
+      // Find top active employee
+      let maxEmp = '-';
+      let maxEmpVal = 0;
+      Object.keys(employeeCounts).forEach(emp => {
+        if (employeeCounts[emp] > maxEmpVal) {
+          maxEmpVal = employeeCounts[emp];
+          maxEmp = emp;
+        }
+      });
+      document.getElementById('kpi-top-employee').innerText = maxEmpVal > 0 ? `${maxEmp} (${maxEmpVal} ครั้ง)` : '-';
+
+      // Find top visited region
+      let maxReg = '-';
+      let maxRegVal = 0;
+      Object.keys(regionCounts).forEach(reg => {
+        if (regionCounts[reg] > maxRegVal) {
+          maxRegVal = regionCounts[reg];
+          maxReg = reg;
+        }
+      });
+      document.getElementById('kpi-top-region').innerText = maxRegVal > 0 ? `${maxReg}` : '-';
+
+      // Re-render charts
+      renderRegionChart(regionCounts);
+    }
+
+    function renderRegionChart(countsMap) {
+      const ctx = document.getElementById('regionChart').getContext('2d');
+      const labels = Object.keys(countsMap);
+      const data = labels.map(reg => countsMap[reg]);
+      
+      const chartLabels = labels.length > 0 ? labels : ['ภาคเหนือ', 'ภาคใต้', 'ภาคอีสาน'];
+      const chartData = labels.length > 0 ? data : [0, 0, 0];
+
+      if (regionChartInstance) {
+        regionChartInstance.destroy();
+      }
+
+      regionChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: chartLabels,
+          datasets: [{
+            data: chartData,
+            backgroundColor: [
+              'rgba(59, 130, 246, 0.6)', // Blue
+              'rgba(16, 185, 129, 0.6)', // Green
+              'rgba(239, 68, 68, 0.6)',  // Red
+              'rgba(245, 158, 11, 0.6)', // Orange/Yellow
+              'rgba(139, 92, 246, 0.6)', // Purple
+              'rgba(255, 255, 255, 0.3)' // White/Other
+            ],
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                color: '#9ca3af',
+                boxWidth: 12,
+                font: { family: 'Outfit, Noto Sans Thai', size: 11 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // External Trigger helper: Initialize sheets connection directly (Apps Script helper)
+    async function initializeSheetQueue(names) {
+      try {
+        const response = await fetch(appConfig.sheetsUrl, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          body: JSON.stringify({
+            action: 'initializeQueue',
+            employees: names
+          })
+        });
+        const res = await response.json();
+        return res.success;
+      } catch (err) {
+        console.error("Sheets initialization failed", err);
+        return false;
+      }
+    }
+  </script>
+</body>
+</html>
